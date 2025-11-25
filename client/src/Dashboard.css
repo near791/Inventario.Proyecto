@@ -24,10 +24,110 @@
   font-size: 14px;
   cursor: pointer;
   transition: all 0.3s ease;
+  z-index: 100;
 }
 
 .btn-cerrar-sesion:hover {
   background-color: #3646fd;
+}
+
+/* ===== BOTÓN DE NOTIFICACIONES ===== */
+.btn-notificaciones {
+  position: absolute;
+  top: 20px;
+  right: 180px;
+  background-color: #ff9800;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-notificaciones:hover {
+  background-color: #f57c00;
+  transform: translateY(-2px);
+}
+
+.btn-notificaciones .badge {
+  background-color: #e74c3c;
+  color: white;
+  border-radius: 50%;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: bold;
+  min-width: 20px;
+  text-align: center;
+}
+
+/* ===== PANEL DE NOTIFICACIONES ===== */
+.panel-notificaciones {
+  position: absolute;
+  top: 70px;
+  right: 20px;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.3);
+  padding: 20px;
+  width: 350px;
+  max-height: 500px;
+  overflow-y: auto;
+  z-index: 999;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.panel-notificaciones h4 {
+  margin: 15px 0 10px 0;
+  color: #333;
+  font-size: 16px;
+  border-bottom: 2px solid #eee;
+  padding-bottom: 8px;
+}
+
+.panel-notificaciones h4:first-child {
+  margin-top: 0;
+}
+
+.notificacion-item {
+  padding: 12px;
+  margin: 8px 0;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.notificacion-item.alerta {
+  background-color: #ffebee;
+  border-left: 4px solid #e74c3c;
+  color: #c62828;
+}
+
+.notificacion-item.promocion {
+  background-color: #e8f5e9;
+  border-left: 4px solid #4caf50;
+  color: #2e7d32;
+}
+
+.notificacion-item strong {
+  display: block;
+  margin-bottom: 4px;
 }
 
 .dashboard h2 {
