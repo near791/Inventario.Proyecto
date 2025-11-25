@@ -187,6 +187,96 @@ app.post("/productos/agregar", (req, res) => {
   });
 });
 
+// ========== NUEVAS RUTAS - ESTAS SON LAS QUE FALTAN ==========
+
+// Obtener productos con stock bajo (alertas)
+app.get("/productos/alertas", (req, res) => {
+  console.log("🚨 [RUTA ALERTAS] Obteniendo alertas de stock...");
+  db.query(
+    "SELECT * FROM productos WHERE cantidad <= stock_minimo ORDER BY cantidad ASC",
+    (err, result) => {
+      if (err) {
+        console.error("❌ Error al obtener alertas:", err);
+        return res.status(500).json({ message: "Error al obtener alertas" });
+      }
+      console.log("✅ Alertas obtenidas:", result.length);
+      res.json(result);
+    }
+  );
+});
+
+// Obtener productos en promoción
+app.get("/productos/promociones", (req, res) => {
+  console.log("🎉 [RUTA PROMOCIONES] Obteniendo productos en promoción...");
+  db.query(
+    "SELECT * FROM productos WHERE descuento > 0 ORDER BY descuento DESC",
+    (err, result) => {
+      if (err) {
+        console.error("❌ Error al obtener promociones:", err);
+        return res.status(500).json({ message: "Error al obtener promociones" });
+      }
+      console.log("✅ Promociones obtenidas:", result.length);
+      res.json(result);
+    }
+  );
+});
+
+// Editar un producto
+app.put("/productos/:id", (req, res) => {
+  const { id } = req.params;
+  const { nombre, cantidad, precio, stock_minimo, descuento, granel } = req.body;
+
+  console.log("✏️ [RUTA PUT] Editando producto ID:", id, req.body);
+
+  if (!nombre || cantidad === undefined || !precio) {
+    return res.status(400).json({ message: "Nombre, cantidad y precio son obligatorios" });
+  }
+
+  const cantidadNum = parseFloat(cantidad);
+  const precioNum = parseFloat(precio);
+  const stockMin = parseInt(stock_minimo) || 5;
+  const descuentoNum = parseFloat(descuento) || 0;
+  const esGranel = granel === true || granel === 1;
+
+  db.query(
+    "UPDATE productos SET nombre = ?, cantidad = ?, precio = ?, stock_minimo = ?, descuento = ?, granel = ? WHERE id = ?",
+    [nombre, cantidadNum, precioNum, stockMin, descuentoNum, esGranel, id],
+    (err) => {
+      if (err) {
+        console.error("❌ Error UPDATE:", err);
+        return res.status(500).json({ message: "Error al actualizar producto" });
+      }
+      console.log("✅ Producto actualizado correctamente:", id);
+      res.json({ message: "Producto actualizado correctamente" });
+    }
+  );
+});
+
+// Eliminar un producto
+app.delete("/productos/:id", (req, res) => {
+  const { id } = req.params;
+
+  console.log("🗑️ [RUTA DELETE] Eliminando producto ID:", id);
+
+  db.query("DELETE FROM productos WHERE id = ?", [id], (err) => {
+    if (err) {
+      console.error("❌ Error DELETE:", err);
+      return res.status(500).json({ message: "Error al eliminar producto" });
+    }
+    console.log("✅ Producto eliminado correctamente:", id);
+    res.json({ message: "Producto eliminado correctamente" });
+  });
+});
+
+// ========== FIN RUTAS NUEVAS ==========
+
 app.listen(3001, () => {
   console.log("🚀 Servidor corriendo en el puerto 3001");
+  console.log("📌 Rutas disponibles:");
+  console.log("   GET  /productos");
+  console.log("   POST /productos/agregar");
+  console.log("   GET  /productos/alertas");
+  console.log("   GET  /productos/promociones");
+  console.log("   PUT  /productos/:id");
+  console.log("   DELETE /productos/:id");
 });
