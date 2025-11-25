@@ -229,6 +229,13 @@ function Dashboard() {
       {/* Panel de Notificaciones */}
       {mostrarNotificaciones && (
         <div className="panel-notificaciones">
+          <button 
+            className="btn-cerrar-notificaciones" 
+            onClick={() => setMostrarNotificaciones(false)}
+            title="Cerrar notificaciones"
+          >
+            ✕
+          </button>
           <h4>🚨 Alertas de Stock Bajo ({alertas.length})</h4>
           {alertas.length === 0 ? (
             <p style={{color: '#999', fontSize: '14px'}}>✅ No hay alertas de stock</p>
@@ -259,7 +266,7 @@ function Dashboard() {
         </div>
       )}
 
-      <h2>📦 Inventario - Panel Principal</h2>
+      <h2>Mi Gestor de Inventario</h2>
       
       <div className="opciones">
         <button className="btn-opcion" onClick={abrirPanel}>
