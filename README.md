@@ -53,10 +53,11 @@ npm start
 
 ## Comandos Git
 
-Antes de trabajar:
+Antes de trabajar(descarga los cambios hechos por los demas):
 git pull
 
-Despues de hacer cambios:
+Despues de hacer cambios(ejemplo git add server/index.js, luego el git comit -m "una descripcion"
+finaliza con git push para cargar los cambios):
 git add .
 git commit -m "Descripcion de cambios"
 git push

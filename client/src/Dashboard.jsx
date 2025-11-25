@@ -124,13 +124,13 @@ function Dashboard() {
       <button className="btn-cerrar-sesion" onClick={cerrarSesion}>
         Cerrar Sesión 🚪
       </button>
-      <h2>📦 Inventario - Panel Principal</h2>
+      <h2>📦 Mi Gestor de Inventario</h2>
       <div className="opciones">
         <button className="btn-opcion" onClick={abrirPanel}>
-          Agregar Productos ➕
+          Agregar Productos 
         </button>
-        <button className="btn-opcion">Vender Productos 💸</button>
-        <button className="btn-opcion">Datos 📊</button>
+        <button className="btn-opcion">Vender Productos </button>
+        <button className="btn-opcion">Datos </button>
       </div>
 
       {mostrarPanel && (
@@ -164,7 +164,7 @@ function Dashboard() {
             
             {nombreProducto && (
               <p style={{ fontSize: '12px', color: productoExistente ? '#27ae60' : '#e67e22', marginTop: '5px' }}>
-                {productoExistente ? '✓ Producto existente - se sumará al stock' : '✨ Producto nuevo - se creará'}
+                {productoExistente ? '✓ Producto existente - se sumará al stock' : 'Añadiendo producto nuevo'}
               </p>
             )}
 

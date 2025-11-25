@@ -16,18 +16,18 @@
   position: absolute;
   top: 20px;
   right: 20px;
-  background-color: #4440b6;
+  background-color: #4a48d6;
   color: white;
   border: none;
   padding: 10px 20px;
-  border-radius: 12px;
+  border-radius: 8px;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
 .btn-cerrar-sesion:hover {
-  background-color: #7071b7;
+  background-color: #3646fd;
 }
 
 .dashboard h2 {
@@ -196,4 +196,78 @@
   padding: 10px;
   border-radius: 5px;
   background-color: #f0f0f0;
+}
+
+/* Tabla de inventario */
+.panel-inventario {
+  background-color: white;
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.3);
+  width: 90%;
+  max-width: 1200px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.tabla-container {
+  overflow-x: auto;
+  margin: 20px 0;
+}
+
+.tabla-inventario {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tabla-inventario th {
+  background-color: #2ecc71;
+  color: white;
+  padding: 12px;
+  text-align: left;
+  font-weight: bold;
+}
+
+.tabla-inventario td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #ddd;
+}
+
+.tabla-inventario tr:hover {
+  background-color: #f5f5f5;
+}
+
+.tabla-inventario tr.stock-bajo {
+  background-color: #ffebee;
+}
+
+.tabla-inventario tr.stock-bajo td {
+  color: #c62828;
+  font-weight: bold;
+}
+
+.btn-editar, .btn-eliminar {
+  border: none;
+  padding: 5px 10px;
+  margin: 0 3px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+.btn-editar {
+  background-color: #3498db;
+}
+
+.btn-editar:hover {
+  background-color: #2980b9;
+}
+
+.btn-eliminar {
+  background-color: #e74c3c;
+}
+
+.btn-eliminar:hover {
+  background-color: #c0392b;
 }

@@ -1,8 +1,8 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Login from "./Login";         
-import Dashboard from "./Dashboard"; 
+import Login from "./Login";
+import Dashboard from "./Dashboard";
 
-export default function App() {
+function App() {
   return (
     <BrowserRouter>
       <Routes>
@@ -13,7 +13,7 @@ export default function App() {
   );
 }
 
-
+export default App;
 
 
 
