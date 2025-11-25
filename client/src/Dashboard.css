@@ -32,7 +32,6 @@
   transform: translateY(-2px);
 }
 
-/* ===== BOTÓN DE NOTIFICACIONES ===== */
 .btn-notificaciones {
   position: absolute;
   top: 20px;
@@ -67,7 +66,6 @@
   text-align: center;
 }
 
-/* ===== PANEL DE NOTIFICACIONES ===== */
 .panel-notificaciones {
   position: absolute;
   top: 70px;
@@ -158,6 +156,25 @@
   margin-bottom: 4px;
 }
 
+.btn-terminar-promo {
+  background-color: #ff9800;
+  color: white;
+  border: none;
+  padding: 5px 12px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  margin-left: 10px;
+}
+
+.btn-terminar-promo:hover {
+  background-color: #f57c00;
+  transform: scale(1.05);
+}
+
 .dashboard h2 {
   background-color: #ffffffbb;
   padding: 20px 30px;
@@ -174,7 +191,7 @@
 }
 
 .btn-opcion {
-  background-color: #2ecc71;
+  background-color: #018237;
   color: white;
   border: none;
   padding: 25px 35px;

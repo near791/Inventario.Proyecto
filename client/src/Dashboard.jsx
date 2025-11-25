@@ -203,6 +203,25 @@ function Dashboard() {
       });
   };
 
+  const terminarPromocion = (id, nombreProducto) => {
+    if (!window.confirm(`¿Terminar la promoción de ${nombreProducto}?`)) return;
+
+    console.log("🎉 Terminando promoción del producto ID:", id);
+
+    Axios.put(`http://localhost:3001/productos/${id}`, {
+      descuento: 0
+    })
+      .then((response) => {
+        alert("✅ Promoción terminada correctamente");
+        cargarProductos();
+        cargarAlertas();
+        cargarPromociones();
+      })
+      .catch((error) => {
+        alert("❌ " + (error?.response?.data?.message || "Error al terminar promoción"));
+      });
+  };
+
   const toggleNotificaciones = () => {
     console.log("🔔 Toggle notificaciones. Estado actual:", mostrarNotificaciones);
     setMostrarNotificaciones(!mostrarNotificaciones);
@@ -245,7 +264,7 @@ function Dashboard() {
                 <strong>{p.nombre}</strong>
                 Stock actual: {p.granel ? `${p.cantidad} kg` : `${p.cantidad} unidades`}
                 <br />
-                Mínimo requerido: {p.stock_minimo}
+                Mínimo requerido: {p.granel ? `${p.stock_minimo} kg` : `${p.stock_minimo} unidades`}
               </div>
             ))
           )}
@@ -256,21 +275,32 @@ function Dashboard() {
           ) : (
             promociones.map((p) => (
               <div key={p.id} className="notificacion-item promocion">
-                <strong>{p.nombre}</strong>
-                Descuento: {p.descuento}% OFF
-                <br />
-                Precio con descuento: ${(p.precio * (1 - p.descuento/100)).toFixed(2)}
+                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start'}}>
+                  <div style={{flex: 1}}>
+                    <strong>{p.nombre}</strong>
+                    Descuento: {p.descuento}% OFF
+                    <br />
+                    Precio con descuento: ${(p.precio * (1 - p.descuento/100)).toFixed(2)}
+                  </div>
+                  <button 
+                    className="btn-terminar-promo"
+                    onClick={() => terminarPromocion(p.id, p.nombre)}
+                    title="Terminar promoción"
+                  >
+                    Terminar
+                  </button>
+                </div>
               </div>
             ))
           )}
         </div>
       )}
 
-      <h2>Mi Gestor de Inventario</h2>
+      <h2>Mi Gestor de Imnventario</h2>
       
       <div className="opciones">
         <button className="btn-opcion" onClick={abrirPanel}>
-          Agregar Productos ➕
+          Agregar Productos ➕ 
         </button>
         <button className="btn-opcion" onClick={abrirInventario}>
           Ver Inventario 📋

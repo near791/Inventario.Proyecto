@@ -228,6 +228,24 @@ app.put("/productos/:id", (req, res) => {
 
   console.log("✏️ [RUTA PUT] Editando producto ID:", id, req.body);
 
+  // Si solo se envía descuento (para terminar promoción)
+  if (descuento !== undefined && Object.keys(req.body).length === 1) {
+    db.query(
+      "UPDATE productos SET descuento = ? WHERE id = ?",
+      [parseFloat(descuento), id],
+      (err) => {
+        if (err) {
+          console.error("❌ Error UPDATE descuento:", err);
+          return res.status(500).json({ message: "Error al actualizar descuento" });
+        }
+        console.log("✅ Descuento actualizado:", id);
+        res.json({ message: "Descuento actualizado correctamente" });
+      }
+    );
+    return;
+  }
+
+  // Edición completa del producto
   if (!nombre || cantidad === undefined || !precio) {
     return res.status(400).json({ message: "Nombre, cantidad y precio son obligatorios" });
   }
