@@ -8,10 +8,12 @@ function Dashboard() {
   const [nombreProducto, setNombreProducto] = useState("");
   const [cantidad, setCantidad] = useState("");
   const [precio, setPrecio] = useState("");
+  const [granel, setGranel] = useState(false);
   const [productosFiltrados, setProductosFiltrados] = useState([]);
   const [mostrarSugerencias, setMostrarSugerencias] = useState(false);
   const [mensaje, setMensaje] = useState("");
   const [productoExistente, setProductoExistente] = useState(false);
+  const [productoGranelExistente, setProductoGranelExistente] = useState(false);
 
   // Verificar si el usuario está logueado
   useEffect(() => {
@@ -59,11 +61,13 @@ function Dashboard() {
     }
   };
 
-  const seleccionarProducto = (nombre) => {
-    setNombreProducto(nombre);
+  const seleccionarProducto = (producto) => {
+    setNombreProducto(producto.nombre);
     setMostrarSugerencias(false);
     setProductoExistente(true);
-    setPrecio(""); // No pedimos precio si ya existe
+    setPrecio("");
+    setProductoGranelExistente(producto.granel);
+    setGranel(producto.granel); // Mantener el tipo de producto
   };
 
   const agregarProducto = () => {
@@ -79,15 +83,18 @@ function Dashboard() {
 
     Axios.post("http://localhost:3001/productos/agregar", {
       nombre: nombreProducto,
-      cantidad: parseInt(cantidad),
+      cantidad: parseFloat(cantidad),
       precio: precio ? parseFloat(precio) : null,
+      granel: granel,
     })
       .then((response) => {
         setMensaje("✅ " + response.data.message);
         setNombreProducto("");
         setCantidad("");
         setPrecio("");
+        setGranel(false);
         setProductoExistente(false);
+        setProductoGranelExistente(false);
         cargarProductos();
       })
       .catch((error) => {
@@ -106,7 +113,9 @@ function Dashboard() {
     setNombreProducto("");
     setCantidad("");
     setPrecio("");
+    setGranel(false);
     setProductoExistente(false);
+    setProductoGranelExistente(false);
     setMensaje("");
   };
 
@@ -144,9 +153,9 @@ function Dashboard() {
                     <div
                       key={producto.id}
                       className="sugerencia-item"
-                      onClick={() => seleccionarProducto(producto.nombre)}
+                      onClick={() => seleccionarProducto(producto)}
                     >
-                      {producto.nombre} (Stock: {producto.cantidad})
+                      {producto.nombre} (Stock: {producto.granel ? `${producto.cantidad} kg` : producto.cantidad})
                     </div>
                   ))}
                 </div>
@@ -155,22 +164,33 @@ function Dashboard() {
             
             {nombreProducto && (
               <p style={{ fontSize: '12px', color: productoExistente ? '#27ae60' : '#e67e22', marginTop: '5px' }}>
-                {productoExistente ? '✓ Producto existente - se sumará al stock' : 'Agregando producto nuevo'}
+                {productoExistente ? '✓ Producto existente - se sumará al stock' : '✨ Producto nuevo - se creará'}
               </p>
             )}
 
-            <label>Cantidad a Agregar:</label>
+            <label>Cantidad a Agregar{productoGranelExistente ? ' (kg)' : ''}:</label>
             <input
               type="number"
               value={cantidad}
               onChange={(e) => setCantidad(e.target.value)}
-              placeholder="Ingresa la cantidad"
-              min="1"
+              placeholder={productoGranelExistente ? "Ej: 0.5" : "Ingresa la cantidad"}
+              min="0"
+              step={productoGranelExistente ? "0.01" : "1"}
             />
 
             {!productoExistente && (
               <>
-                <label>Precio por Unidad:</label>
+                <label style={{ display: 'flex', alignItems: 'center', marginTop: '15px', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={granel}
+                    onChange={(e) => setGranel(e.target.checked)}
+                    style={{ marginRight: '8px', width: 'auto', cursor: 'pointer' }}
+                  />
+                  ¿Es producto a granel? (se mide en kg)
+                </label>
+
+                <label>Precio por {granel ? 'kg' : 'unidad'}:</label>
                 <input
                   type="number"
                   value={precio}

@@ -48,7 +48,6 @@ app.post("/create", async (req, res) => {
         return res.status(409).json({ message: "Usuario no disponible" });
       }
 
-      // Insertar nuevo usuario
       db.query(
         "INSERT INTO usuarios (usuario, contrasena) VALUES (?, ?)",
         [Usuario, hash],
@@ -89,7 +88,6 @@ app.post("/login", (req, res) => {
         return res.status(401).json({ success: false, message: "Usuario o contraseña incorrectos" });
       }
 
-      // Nombre de columna: contrasena (sin ñ)
       const hashGuardado = result[0].contrasena;
       const contraseñaCorrecta = await bcrypt.compare(Contraseña, hashGuardado);
 
@@ -120,16 +118,17 @@ app.get("/productos", (req, res) => {
 
 // Agregar o actualizar cantidad de producto
 app.post("/productos/agregar", (req, res) => {
-  const { nombre, cantidad, precio } = req.body;
+  const { nombre, cantidad, precio, granel } = req.body;
   
-  console.log("📦 Agregando producto:", { nombre, cantidad, precio });
+  console.log("📦 Agregando producto:", { nombre, cantidad, precio, granel });
 
-  if (!nombre || !cantidad) {
+  if (!nombre || cantidad === undefined || cantidad === null) {
     return res.status(400).json({ message: "Nombre y cantidad son obligatorios" });
   }
 
-  const cantidadNum = parseInt(cantidad, 10);
+  const cantidadNum = parseFloat(cantidad);
   const precioNum = precio ? parseFloat(precio) : null;
+  const esGranel = granel === true || granel === "true" || granel === 1;
 
   if (isNaN(cantidadNum) || cantidadNum <= 0) {
     return res.status(400).json({ message: "La cantidad debe ser un número válido mayor a 0" });
@@ -143,8 +142,8 @@ app.post("/productos/agregar", (req, res) => {
     }
 
     if (result.length > 0) {
-      // Si existe, actualizar solo cantidad (no precio)
-      const cantidadActual = parseInt(result[0].cantidad, 10);
+      // Si existe, actualizar solo cantidad
+      const cantidadActual = parseFloat(result[0].cantidad);
       const nuevaCantidad = cantidadActual + cantidadNum;
       
       console.log(`📊 Sumando: ${cantidadActual} + ${cantidadNum} = ${nuevaCantidad}`);
@@ -158,24 +157,29 @@ app.post("/productos/agregar", (req, res) => {
             return res.status(500).json({ message: "Error al actualizar producto" });
           }
           console.log("✅ Producto actualizado:", nombre, "Nueva cantidad:", nuevaCantidad);
-          res.json({ message: "Producto actualizado correctamente", nuevaCantidad, productoExistente: true });
+          res.json({ 
+            message: "Producto actualizado correctamente", 
+            nuevaCantidad, 
+            productoExistente: true,
+            granel: result[0].granel
+          });
         }
       );
     } else {
-      // Si no existe, crear nuevo (precio es obligatorio)
+      // Si no existe, crear nuevo
       if (!precioNum || isNaN(precioNum) || precioNum < 0) {
         return res.status(400).json({ message: "El precio es obligatorio y debe ser válido para productos nuevos" });
       }
       
       db.query(
-        "INSERT INTO productos (nombre, cantidad, precio) VALUES (?, ?, ?)",
-        [nombre, cantidadNum, precioNum],
+        "INSERT INTO productos (nombre, cantidad, precio, granel) VALUES (?, ?, ?, ?)",
+        [nombre, cantidadNum, precioNum, esGranel],
         (err) => {
           if (err) {
             console.error("❌ Error INSERT:", err);
             return res.status(500).json({ message: "Error al crear producto" });
           }
-          console.log("✅ Producto creado:", nombre, "Cantidad:", cantidadNum, "Precio:", precioNum);
+          console.log("✅ Producto creado:", nombre, "Cantidad:", cantidadNum, "Precio:", precioNum, "Granel:", esGranel);
           res.json({ message: "Producto creado correctamente", productoExistente: false });
         }
       );
