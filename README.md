@@ -31,15 +31,41 @@ cantidad INT NOT NULL DEFAULT 0,
 precio DECIMAL(10,2) NOT NULL DEFAULT 0
 );
 
+para agregar otras casillas en productos:
+ALTER TABLE productos
+ADD COLUMN cantidad DECIMAL(10,2) NOT NULL DEFAULT 0.00;
+
+ALTER TABLE productos
+ADD COLUMN precio INT DEFAULT NULL;
+
+ALTER TABLE productos
+ADD COLUMN granel TINYINT(1) DEFAULT 0;
+
+ALTER TABLE productos
+ADD COLUMN stock_minimo INT DEFAULT 5;
+
+ALTER TABLE productos
+ADD COLUMN descuento DECIMAL(5,2) DEFAULT 0.00;
+
 ### 3. Instalar dependencias
 
 Frontend:
 cd client
 npm install
 
+librerias a installar en client:
+react router dom (version 6)
+axios
+
 Backend:
 cd server
 npm install
+
+librerias a instalar en server:
+express
+mysql2
+bcrypt
+cors
 
 ## Ejecutar proyecto
 
