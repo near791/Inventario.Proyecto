@@ -13,7 +13,6 @@ function Login() {
     Axios.post("http://localhost:3001/create", { Usuario, Contraseña })
       .then((response) => {
         alert(response.data.message);
-        // Limpiar los campos después de crear la cuenta
         setUsuario("");
         setContraseña("");
       })
@@ -29,8 +28,15 @@ function Login() {
     })
       .then((response) => {
         if (response.data.success) {
-          // Guardar sesión
-          sessionStorage.setItem("usuarioLogueado", loginUsuario);
+          // Guardar sesión con usuario_id y nombre de usuario
+          sessionStorage.setItem("usuarioLogueado", response.data.usuario);
+          sessionStorage.setItem("usuarioId", response.data.usuario_id);
+          
+          console.log("✅ Sesión guardada:", {
+            usuario: response.data.usuario,
+            id: response.data.usuario_id
+          });
+          
           window.location.href = "/dashboard";
         } else {
           setMensajeLogin(response.data.message);
@@ -60,7 +66,12 @@ function Login() {
             <input 
               type="password" 
               value={loginContraseña}
-              onChange={(e) => setLoginContraseña(e.target.value)} 
+              onChange={(e) => setLoginContraseña(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === "Enter") {
+                  loginUser();
+                }
+              }}
             />
           </label>
           <br />
@@ -84,7 +95,12 @@ function Login() {
             <input 
               type="password" 
               value={Contraseña}
-              onChange={(e) => setContraseña(e.target.value)} 
+              onChange={(e) => setContraseña(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === "Enter") {
+                  addUser();
+                }
+              }}
             />
           </label>
           <br />

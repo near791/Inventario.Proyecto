@@ -6,6 +6,7 @@ function Dashboard() {
   const [mostrarPanel, setMostrarPanel] = useState(false);
   const [mostrarInventario, setMostrarInventario] = useState(false);
   const [mostrarNotificaciones, setMostrarNotificaciones] = useState(false);
+  const [mostrarVenta, setMostrarVenta] = useState(false);
   const [productos, setProductos] = useState([]);
   const [nombreProducto, setNombreProducto] = useState("");
   const [cantidad, setCantidad] = useState("");
@@ -19,21 +20,43 @@ function Dashboard() {
   const [productoEditando, setProductoEditando] = useState(null);
   const [alertas, setAlertas] = useState([]);
   const [promociones, setPromociones] = useState([]);
+  
+  // Estados para venta
+  const [nombreVenta, setNombreVenta] = useState("");
+  const [cantidadVenta, setCantidadVenta] = useState("");
+  const [productosFiltradosVenta, setProductosFiltradosVenta] = useState([]);
+  const [mostrarSugerenciasVenta, setMostrarSugerenciasVenta] = useState(false);
+  const [productoSeleccionadoVenta, setProductoSeleccionadoVenta] = useState(null);
+  const [mensajeVenta, setMensajeVenta] = useState("");
+
+  // Estado para usuario
+  const [usuarioId, setUsuarioId] = useState(null);
+  const [nombreUsuario, setNombreUsuario] = useState("");
 
   // Verificar si el usuario está logueado
-  useEffect(() => {
-    const usuario = sessionStorage.getItem("usuarioLogueado");
-    if (!usuario) {
-      window.location.href = "/";
-    }
-  }, []);
+useEffect(() => {
+  const usuario = sessionStorage.getItem("usuarioLogueado");
+  const id = sessionStorage.getItem("usuarioId");
+  
+  console.log("🔍 Verificando sesión:", { usuario, id, tipo: typeof id });
+  
+  if (!usuario || !id) {
+    console.error("❌ No hay sesión válida");
+    window.location.href = "/";
+  } else {
+    setNombreUsuario(usuario);
+    const idNum = parseInt(id);
+    setUsuarioId(idNum);
+    console.log("✅ Usuario cargado:", { usuario, id: idNum });
+  }
+}, []);
 
   // Cargar productos al abrir el panel o inventario
   useEffect(() => {
-    if (mostrarPanel || mostrarInventario) {
+    if (mostrarPanel || mostrarInventario || mostrarVenta) {
       cargarProductos();
     }
-  }, [mostrarPanel, mostrarInventario]);
+  }, [mostrarPanel, mostrarInventario, mostrarVenta]);
 
   // Cargar alertas y promociones al montar el componente
   useEffect(() => {
@@ -42,7 +65,7 @@ function Dashboard() {
     const intervalo = setInterval(() => {
       cargarAlertas();
       cargarPromociones();
-    }, 30000); // Actualizar cada 30 segundos
+    }, 30000);
     return () => clearInterval(intervalo);
   }, []);
 
@@ -52,6 +75,7 @@ function Dashboard() {
         console.log("✅ Productos cargados:", response.data);
         setProductos(response.data);
         setProductosFiltrados(response.data);
+        setProductosFiltradosVenta(response.data);
       })
       .catch((error) => {
         console.error("❌ Error al cargar productos:", error);
@@ -141,8 +165,84 @@ function Dashboard() {
       });
   };
 
+  // Funciones para venta
+  const filtrarProductosVenta = (texto) => {
+    setNombreVenta(texto);
+    setProductoSeleccionadoVenta(null);
+    
+    if (texto === "") {
+      setProductosFiltradosVenta(productos);
+    } else {
+      const filtrados = productos.filter((p) =>
+        p.nombre.toLowerCase().includes(texto.toLowerCase())
+      );
+      setProductosFiltradosVenta(filtrados);
+    }
+  };
+
+  const seleccionarProductoVenta = (producto) => {
+    setNombreVenta(producto.nombre);
+    setMostrarSugerenciasVenta(false);
+    setProductoSeleccionadoVenta(producto);
+  };
+
+  const venderProducto = () => {
+  console.log("=== DEBUG VENTA ===");
+  console.log("nombreVenta:", nombreVenta);
+  console.log("cantidadVenta:", cantidadVenta);
+  console.log("usuarioId:", usuarioId, "tipo:", typeof usuarioId);
+  console.log("productoSeleccionado:", productoSeleccionadoVenta);
+  console.log("==================");
+
+  if (!nombreVenta || !cantidadVenta) {
+    setMensajeVenta("⚠️ Por favor completa nombre y cantidad");
+    return;
+  }
+
+  if (!productoSeleccionadoVenta) {
+    setMensajeVenta("⚠️ Debes seleccionar un producto de la lista");
+    return;
+  }
+
+    if (!usuarioId || usuarioId === null || isNaN(usuarioId)) {
+    setMensajeVenta("⚠️ Error: Usuario no identificado. Por favor cierra sesión e ingresa nuevamente.");
+    console.error("❌ usuarioId inválido:", usuarioId);
+    return;
+  }
+
+    Axios.post("http://localhost:3001/productos/vender", {
+      nombre: nombreVenta,
+      cantidad: parseFloat(cantidadVenta),
+      usuario_id: usuarioId,
+    })
+      .then((response) => {
+        const datos = response.data;
+        setMensajeVenta(
+          `✅ ${datos.message}\n💰 Total: $${datos.total.toFixed(2)}\n📦 Stock restante: ${datos.nuevaCantidad} ${datos.granel ? 'kg' : 'unidades'}`
+        );
+        setNombreVenta("");
+        setCantidadVenta("");
+        setProductoSeleccionadoVenta(null);
+        cargarProductos();
+        cargarAlertas();
+      })
+      .catch((error) => {
+        setMensajeVenta("❌ " + (error?.response?.data?.message || "Error al realizar la venta"));
+      });
+  };
+
+  const abrirVenta = () => {
+    console.log("💸 Abriendo panel de venta");
+    setMostrarVenta(true);
+    setNombreVenta("");
+    setCantidadVenta("");
+    setProductoSeleccionadoVenta(null);
+    setMensajeVenta("");
+  };
+
   const cerrarSesion = () => {
     sessionStorage.removeItem("usuarioLogueado");
+    sessionStorage.removeItem("usuarioId");
     window.location.href = "/";
   };
 
@@ -296,7 +396,8 @@ function Dashboard() {
         </div>
       )}
 
-      <h2>Mi Gestor de Imnventario</h2>
+      <h2>Mi Gestor de Inventario</h2>
+      {nombreUsuario && <p className="usuario-actual">👤 Usuario: {nombreUsuario}</p>}
       
       <div className="opciones">
         <button className="btn-opcion" onClick={abrirPanel}>
@@ -305,7 +406,9 @@ function Dashboard() {
         <button className="btn-opcion" onClick={abrirInventario}>
           Ver Inventario 📋
         </button>
-        <button className="btn-opcion">Vender Productos 💸</button>
+        <button className="btn-opcion" onClick={abrirVenta}>
+          Vender Productos 💸
+        </button>
         <button className="btn-opcion">Datos 📊</button>
       </div>
 
@@ -389,6 +492,105 @@ function Dashboard() {
             </div>
 
             {mensaje && <p className="mensaje-panel">{mensaje}</p>}
+          </div>
+        </div>
+      )}
+
+      {/* Panel de Venta */}
+      {mostrarVenta && (
+        <div className="panel-overlay" onClick={() => setMostrarVenta(false)}>
+          <div className="panel-venta" onClick={(e) => e.stopPropagation()}>
+            <h3>💸 Vender Producto</h3>
+            
+            <label>Producto a Vender:</label>
+            <div className="input-con-sugerencias">
+              <input
+                type="text"
+                value={nombreVenta}
+                onChange={(e) => filtrarProductosVenta(e.target.value)}
+                onFocus={() => setMostrarSugerenciasVenta(true)}
+                placeholder="Busca un producto..."
+              />
+              {mostrarSugerenciasVenta && productosFiltradosVenta.length > 0 && (
+                <div className="sugerencias">
+                  {productosFiltradosVenta.map((producto) => (
+                    <div
+                      key={producto.id}
+                      className="sugerencia-item-venta"
+                      onClick={() => seleccionarProductoVenta(producto)}
+                    >
+                      <div className="sugerencia-nombre">{producto.nombre}</div>
+                      <div className="sugerencia-detalles">
+                        Stock: {producto.granel ? `${producto.cantidad} kg` : `${producto.cantidad} unidades`} 
+                        {producto.descuento > 0 && (
+                          <span className="sugerencia-descuento"> | {producto.descuento}% OFF</span>
+                        )}
+                      </div>
+                      <div className="sugerencia-precio">
+                        {producto.descuento > 0 ? (
+                          <>
+                            <span className="precio-original">${producto.precio}</span>
+                            <span className="precio-descuento"> ${(producto.precio * (1 - producto.descuento/100)).toFixed(2)}</span>
+                          </>
+                        ) : (
+                          <span>${producto.precio}</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {productoSeleccionadoVenta && (
+              <div className="info-producto-venta">
+                <p><strong>Producto:</strong> {productoSeleccionadoVenta.nombre}</p>
+                <p><strong>Stock disponible:</strong> {productoSeleccionadoVenta.granel ? `${productoSeleccionadoVenta.cantidad} kg` : `${productoSeleccionadoVenta.cantidad} unidades`}</p>
+                <p><strong>Precio:</strong> 
+                  {productoSeleccionadoVenta.descuento > 0 ? (
+                    <>
+                      <span style={{textDecoration: 'line-through', color: '#999', marginLeft: '5px'}}>${productoSeleccionadoVenta.precio}</span>
+                      <span style={{color: '#27ae60', fontWeight: 'bold', marginLeft: '5px'}}>${(productoSeleccionadoVenta.precio * (1 - productoSeleccionadoVenta.descuento/100)).toFixed(2)}</span>
+                      <span style={{color: '#e67e22', marginLeft: '5px'}}>({productoSeleccionadoVenta.descuento}% OFF)</span>
+                    </>
+                  ) : (
+                    <span style={{marginLeft: '5px'}}>${productoSeleccionadoVenta.precio}</span>
+                  )}
+                </p>
+              </div>
+            )}
+
+            <label>Cantidad a Vender{productoSeleccionadoVenta?.granel ? ' (kg)' : ''}:</label>
+            <input
+              type="number"
+              value={cantidadVenta}
+              onChange={(e) => setCantidadVenta(e.target.value)}
+              placeholder={productoSeleccionadoVenta?.granel ? "Ej: 0.5" : "Ingresa la cantidad"}
+              min="0"
+              step={productoSeleccionadoVenta?.granel ? "0.01" : "1"}
+              disabled={!productoSeleccionadoVenta}
+            />
+
+            {productoSeleccionadoVenta && cantidadVenta && (
+              <div className="total-venta">
+                <strong>Total a cobrar:</strong> ${(parseFloat(cantidadVenta) * (productoSeleccionadoVenta.precio * (1 - productoSeleccionadoVenta.descuento/100))).toFixed(2)}
+              </div>
+            )}
+
+            <div className="botones-panel">
+              <button 
+                className="btn-confirmar" 
+                onClick={venderProducto}
+                disabled={!productoSeleccionadoVenta}
+              >
+                Realizar Venta
+              </button>
+              <button className="btn-cancelar" onClick={() => setMostrarVenta(false)}>
+                Cancelar
+              </button>
+            </div>
+
+            {mensajeVenta && <p className="mensaje-panel" style={{whiteSpace: 'pre-line'}}>{mensajeVenta}</p>}
           </div>
         </div>
       )}

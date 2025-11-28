@@ -61,6 +61,33 @@ granel, tinyint(1), yes null, default 0.
 stock_minimo, int, yes null, 5.
 descuento, decimal(5,2), null yes, default 0.00
 
+Crear tabla ventas solo con su id que es primary key, int, auto incrementa.
+luego ejecutar este codigo para las demas casillas
+
+-- Agregar todas las columnas necesarias
+ALTER TABLE ventas
+ADD COLUMN usuario_id INT NOT NULL AFTER id,
+ADD COLUMN usuario_nombre VARCHAR(100) NOT NULL AFTER usuario_id,
+ADD COLUMN producto_id INT NOT NULL AFTER usuario_nombre,
+ADD COLUMN producto_nombre VARCHAR(250) NOT NULL AFTER producto_id,
+ADD COLUMN cantidad DECIMAL(10,2) NOT NULL DEFAULT 0 AFTER producto_nombre,
+ADD COLUMN precio_unitario DECIMAL(10,2) NOT NULL DEFAULT 0 AFTER cantidad,
+ADD COLUMN total DECIMAL(10,2) NOT NULL DEFAULT 0 AFTER precio_unitario,
+ADD COLUMN fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP AFTER total;
+
+para asignar las foreign keys:
+ALTER TABLE ventas
+ADD CONSTRAINT fk_venta_usuario
+FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+ON DELETE CASCADE
+ON UPDATE CASCADE;
+
+ALTER TABLE ventas
+ADD CONSTRAINT fk_venta_producto
+FOREIGN KEY (producto_id) REFERENCES productos(id)
+ON DELETE CASCADE
+ON UPDATE CASCADE;
+
 ### 3. Instalar dependencias
 
 Frontend:

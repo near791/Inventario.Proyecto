@@ -96,14 +96,17 @@ app.post("/login", (req, res) => {
       }
 
       console.log("✅ Login exitoso:", Usuario);
-      return res.json({ success: true, message: "Inicio de sesión exitoso" });
+      return res.json({ 
+        success: true, 
+        message: "Inicio de sesión exitoso",
+        usuario_id: result[0].id,
+        usuario: result[0].usuario
+      });
     }
   );
 });
 
-// ========== RUTAS DE PRODUCTOS ==========
-
-// Obtener todos los productos
+// Obtener lista de los productos
 app.get("/productos", (req, res) => {
   console.log("📋 Obteniendo lista de productos...");
   db.query("SELECT * FROM productos ORDER BY nombre", (err, result) => {
@@ -187,7 +190,227 @@ app.post("/productos/agregar", (req, res) => {
   });
 });
 
-// ========== NUEVAS RUTAS - ESTAS SON LAS QUE FALTAN ==========
+//VENDER PRODUCTOS
+app.post("/productos/vender", (req, res) => {
+  const { nombre, cantidad, usuario_id } = req.body;
+  
+  console.log("💰 Vendiendo productos:", { nombre, cantidad, usuario_id });
+
+  if (!nombre || cantidad === undefined || cantidad === null) {
+    return res.status(400).json({ message: "Nombre y cantidad son obligatorios" });
+  }
+
+  console.log("📥 Datos recibidos:", { nombre, cantidad, usuario_id, tipo: typeof usuario_id });
+
+  if (!usuario_id) {
+    console.error("❌ usuario_id es undefined o null");
+    return res.status(400).json({ message: "Usuario no identificado. Por favor inicia sesión nuevamente." });
+  }
+
+  const usuarioIdNum = parseInt(usuario_id);
+  if (isNaN(usuarioIdNum)) {
+    console.error("❌ usuario_id no es un número válido:", usuario_id);
+    return res.status(400).json({ message: "ID de usuario inválido" });
+  }
+
+  const cantidadNum = parseFloat(cantidad);
+
+  if (isNaN(cantidadNum) || cantidadNum <= 0) {
+    return res.status(400).json({ message: "La cantidad debe ser un número válido mayor a 0" });
+  }
+
+  // Primero obtener el nombre del usuario
+db.query("SELECT usuario FROM usuarios WHERE id = ?", [usuarioIdNum], (err, usuarioResult) => {
+    if (err) {
+      console.error("❌ Error SELECT usuario:", err);
+      return res.status(500).json({ message: "Error al verificar usuario" });
+    }
+
+    if (usuarioResult.length === 0) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    const nombreUsuario = usuarioResult[0].usuario;
+
+    // Verificar que el producto exista
+    db.query("SELECT * FROM productos WHERE nombre = ?", [nombre], (err, result) => {
+      if (err) {
+        console.error("❌ Error SELECT producto:", err);
+        return res.status(500).json({ message: "Error en la base de datos" });
+      }
+
+      if (result.length === 0) {
+        return res.status(404).json({ 
+          message: "Producto no encontrado. No se puede vender algo que no existe." 
+        });
+      }
+
+      const producto = result[0];
+      const cantidadActual = parseFloat(producto.cantidad);
+      
+      if (cantidadActual < cantidadNum) {
+        return res.status(400).json({ 
+          message: `Stock insuficiente. Solo hay ${cantidadActual} ${producto.granel ? 'kg' : 'unidades'} disponibles.` 
+        });
+      }
+
+      const nuevaCantidad = cantidadActual - cantidadNum;
+      const precioUnitario = producto.descuento > 0 
+        ? producto.precio * (1 - producto.descuento / 100)
+        : producto.precio;
+      const totalVenta = cantidadNum * precioUnitario;
+      
+      console.log(`💵 Cálculo: ${cantidadNum} x $${precioUnitario.toFixed(2)} = $${totalVenta.toFixed(2)}`);
+      
+      // Iniciar transacción
+      db.beginTransaction((err) => {
+        if (err) {
+          console.error("❌ Error al iniciar transacción:", err);
+          return res.status(500).json({ message: "Error al procesar la venta" });
+        }
+
+        // 1. Actualizar stock del producto
+        db.query(
+          "UPDATE productos SET cantidad = ? WHERE id = ?",
+          [nuevaCantidad, producto.id],
+          (err) => {
+            if (err) {
+              return db.rollback(() => {
+                console.error("❌ Error UPDATE productos:", err);
+                res.status(500).json({ message: "Error al actualizar el stock" });
+              });
+            }
+
+            // 2. Registrar la venta en la tabla ventas
+            db.query(
+              `INSERT INTO ventas (usuario_id, usuario_nombre, producto_id, producto_nombre, cantidad, precio_unitario, total) 
+               VALUES (?, ?, ?, ?, ?, ?, ?)`,
+              [usuario_id, nombreUsuario, producto.id, producto.nombre, cantidadNum, precioUnitario, totalVenta],
+              (err, ventaResult) => {
+                if (err) {
+                  return db.rollback(() => {
+                    console.error("❌ Error INSERT ventas:", err);
+                    res.status(500).json({ message: "Error al registrar la venta" });
+                  });
+                }
+
+                // Confirmar transacción
+                db.commit((err) => {
+                  if (err) {
+                    return db.rollback(() => {
+                      console.error("❌ Error al confirmar transacción:", err);
+                      res.status(500).json({ message: "Error al confirmar la venta" });
+                    });
+                  }
+
+                  console.log("✅ Venta registrada exitosamente:", {
+                    venta_id: ventaResult.insertId,
+                    usuario: nombreUsuario,
+                    producto: producto.nombre,
+                    cantidad: cantidadNum,
+                    total: totalVenta
+                  });
+
+                  res.json({ 
+                    message: "Venta realizada correctamente", 
+                    venta_id: ventaResult.insertId,
+                    nuevaCantidad, 
+                    cantidadVendida: cantidadNum,
+                    precioUnitario: precioUnitario,
+                    total: totalVenta,
+                    granel: producto.granel
+                  });
+                });
+              }
+            );
+          }
+        );
+      });
+    });
+  });
+});
+
+// Obtener historial de ventas
+app.get("/ventas", (req, res) => {
+  console.log("📊 Obteniendo historial de ventas...");
+  db.query(
+    "SELECT * FROM ventas ORDER BY fecha DESC",
+    (err, result) => {
+      if (err) {
+        console.error("❌ Error al obtener ventas:", err);
+        return res.status(500).json({ message: "Error al obtener el historial de ventas" });
+      }
+      console.log("✅ Ventas obtenidas:", result.length);
+      res.json(result);
+    }
+  );
+});
+
+// Obtener ventas por usuario
+app.get("/ventas/usuario/:usuario_id", (req, res) => {
+  const { usuario_id } = req.params;
+  console.log("📊 Obteniendo ventas del usuario:", usuario_id);
+  
+  db.query(
+    "SELECT * FROM ventas WHERE usuario_id = ? ORDER BY fecha DESC",
+    [usuario_id],
+    (err, result) => {
+      if (err) {
+        console.error("❌ Error al obtener ventas:", err);
+        return res.status(500).json({ message: "Error al obtener las ventas" });
+      }
+      console.log("✅ Ventas del usuario obtenidas:", result.length);
+      res.json(result);
+    }
+  );
+});
+
+// Obtener estadísticas de ventas
+app.get("/ventas/estadisticas", (req, res) => {
+  console.log("📈 Obteniendo estadísticas de ventas...");
+  
+  db.query(
+    `SELECT 
+      COUNT(*) as total_ventas,
+      SUM(total) as ingresos_totales,
+      SUM(cantidad) as unidades_vendidas,
+      AVG(total) as venta_promedio
+    FROM ventas`,
+    (err, result) => {
+      if (err) {
+        console.error("❌ Error al obtener estadísticas:", err);
+        return res.status(500).json({ message: "Error al obtener estadísticas" });
+      }
+      console.log("✅ Estadísticas obtenidas");
+      res.json(result[0]);
+    }
+  );
+});
+
+// Obtener productos más vendidos
+app.get("/ventas/productos-mas-vendidos", (req, res) => {
+  console.log("🏆 Obteniendo productos más vendidos...");
+  
+  db.query(
+    `SELECT 
+      producto_nombre,
+      SUM(cantidad) as cantidad_total,
+      SUM(total) as ingresos_totales,
+      COUNT(*) as num_ventas
+    FROM ventas 
+    GROUP BY producto_id, producto_nombre
+    ORDER BY cantidad_total DESC
+    LIMIT 10`,
+    (err, result) => {
+      if (err) {
+        console.error("❌ Error al obtener productos más vendidos:", err);
+        return res.status(500).json({ message: "Error al obtener productos más vendidos" });
+      }
+      console.log("✅ Productos más vendidos obtenidos:", result.length);
+      res.json(result);
+    }
+  );
+});
 
 // Obtener productos con stock bajo (alertas)
 app.get("/productos/alertas", (req, res) => {
@@ -286,15 +509,20 @@ app.delete("/productos/:id", (req, res) => {
   });
 });
 
-// ========== FIN RUTAS NUEVAS ==========
-
 app.listen(3001, () => {
   console.log("🚀 Servidor corriendo en el puerto 3001");
   console.log("📌 Rutas disponibles:");
+  console.log("   POST /create");
+  console.log("   POST /login");
   console.log("   GET  /productos");
   console.log("   POST /productos/agregar");
+  console.log("   POST /productos/vender");
   console.log("   GET  /productos/alertas");
   console.log("   GET  /productos/promociones");
   console.log("   PUT  /productos/:id");
   console.log("   DELETE /productos/:id");
+  console.log("   GET  /ventas");
+  console.log("   GET  /ventas/usuario/:usuario_id");
+  console.log("   GET  /ventas/estadisticas");
+  console.log("   GET  /ventas/productos-mas-vendidos");
 });
