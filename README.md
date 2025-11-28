@@ -47,6 +47,20 @@ ADD COLUMN stock_minimo INT DEFAULT 5;
 ALTER TABLE productos
 ADD COLUMN descuento DECIMAL(5,2) DEFAULT 0.00;
 
+Lo que tiene que tener tabla usurarios:
+id, int, no null, primary key, default null, auto incrementar.
+usuario, varchar(100), yes null, unique key, default null.
+contrasena, varchar(225), null yes, default null.
+
+lo que tiene que tener la tabla productos:
+id, int, no null, primary key, default null, auto incremento.
+nombre, varchar(225), no null, unique key, default null.
+cantidad, decimal(10,2), no null, default 0.00
+precio, int, yes null, default null.
+granel, tinyint(1), yes null, default 0.
+stock_minimo, int, yes null, 5.
+descuento, decimal(5,2), null yes, default 0.00
+
 ### 3. Instalar dependencias
 
 Frontend:
