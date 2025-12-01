@@ -51,6 +51,7 @@ function Login() {
 
 return (
   <div className="App">
+      <h1>Mi Gestor de Inventario</h1>
     <div className="contenedor-login">
       <div className="login">
         <h2>Iniciar Sesión</h2>

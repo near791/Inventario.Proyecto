@@ -12,6 +12,16 @@
   min-height: 100vh;
 }
 
+.App h1 {
+  position: absolute;
+  top: 40px;
+  background-color: #ffffffbb;
+  padding: 20px 30px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  font-size: 24px;
+}
+
 .contenedor {
   background-image: url('fondo.png'); 
   background-size: cover; 
