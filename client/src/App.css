@@ -9,6 +9,7 @@
   width: 100%;
   align-items: center;
   font-family: Arial, sans-serif;
+  min-height: 100vh;
 }
 
 .contenedor {
@@ -24,6 +25,15 @@
   width: 100%;
   margin-top: 40px;
   gap: 15px; 
+}
+
+/* Contenedor principal para login */
+.contenedor-login {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
 }
 
 .login, .registro {
@@ -42,6 +52,7 @@
   padding-left: 5px;
   border-radius: 5px;
   border: 1px solid #ccc;
+  box-sizing: border-box;
 }
 
 .datos button, .login button, .registro button {
@@ -53,6 +64,8 @@
   border: none;
   border-radius: 5px;
   cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
 }
 
 .datos button:hover, .login button:hover, .registro button:hover {
@@ -65,3 +78,94 @@
   color: #333;
 }
 
+/* Botón para abrir modal de crear cuenta */
+.btn-crear-cuenta {
+  background-color: #3498db !important;
+  margin-top: 15px;
+}
+
+.btn-crear-cuenta:hover {
+  background-color: #2980b9 !important;
+}
+
+/* Overlay del modal (fondo oscuro) */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+/* Modal de registro */
+.modal-registro {
+  background-color: #ffffffef;
+  border-radius: 10px;
+  padding: 30px;
+  width: 350px;
+  max-width: 90%;
+  box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-registro h2 {
+  margin-top: 0;
+  color: #2ecc71;
+  margin-bottom: 20px;
+}
+
+.modal-registro label {
+  display: block;
+  text-align: left;
+  margin-top: 10px;
+  margin-bottom: 5px;
+  font-weight: bold;
+  color: #333;
+}
+
+/* Botones del modal */
+.botones-modal {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.botones-modal button {
+  flex:1;
+  background-color: #3498db;
+  border-radius: 8px;
+  color:#ffffff;
+  border: none;
+  cursor: pointer;
+}
+
+.botones-modal button:hover {
+  background-color: #2980b9;
+  transform: translateY(-2px);
+}
+
+.botones-modal .btn-cancelar {
+  background-color: #e74c3c;
+}
+
+.botones-modal .btn-cancelar:hover {
+  background-color: #c0392b;
+  transform: translateY(-2px);
+}

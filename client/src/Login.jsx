@@ -8,6 +8,7 @@ function Login() {
   const [loginUsuario, setLoginUsuario] = useState("");
   const [loginContraseña, setLoginContraseña] = useState("");
   const [mensajeLogin, setMensajeLogin] = useState("");
+  const [mostrarRegistro, setMostrarRegistro] = useState(false);
 
   const addUser = () => {
     Axios.post("http://localhost:3001/create", { Usuario, Contraseña })
@@ -15,6 +16,7 @@ function Login() {
         alert(response.data.message);
         setUsuario("");
         setContraseña("");
+        setMostrarRegistro(false);
       })
       .catch((error) => {
         alert(error?.response?.data?.message || "Error al registrar");
@@ -47,39 +49,51 @@ function Login() {
       });
   };
 
-  return (
-    <div className="App">
-      <div className="contenedor">
-        <div className="login">
-          <h2>Iniciar Sesión</h2>
-          <label>
-            Usuario:
-            <input 
-              type="text" 
-              value={loginUsuario}
-              onChange={(e) => setLoginUsuario(e.target.value)} 
-            />
-          </label>
-          <br />
-          <label>
-            Contraseña:
-            <input 
-              type="password" 
-              value={loginContraseña}
-              onChange={(e) => setLoginContraseña(e.target.value)}
-              onKeyPress={(e) => {
-                if (e.key === "Enter") {
-                  loginUser();
-                }
-              }}
-            />
-          </label>
-          <br />
-          <button onClick={loginUser}>Entrar</button>
-          <p className="mensaje">{mensajeLogin}</p>
-        </div>
+return (
+  <div className="App">
+    <div className="contenedor-login">
+      <div className="login">
+        <h2>Iniciar Sesión</h2>
+        <label>
+          Usuario:
+          <input 
+            type="text" 
+            value={loginUsuario}
+            onChange={(e) => setLoginUsuario(e.target.value)} 
+          />
+        </label>
+        <br />
+        <label>
+          Contraseña:
+          <input 
+            type="password" 
+            value={loginContraseña}
+            onChange={(e) => setLoginContraseña(e.target.value)}
+            onKeyPress={(e) => {
+              if (e.key === "Enter") {
+                loginUser();
+              }
+            }}
+          />
+        </label>
+        <br />
+        <button onClick={loginUser}>Entrar</button>
+        <p className="mensaje">{mensajeLogin}</p>
+        
+        {/* Botón para abrir el modal */}
+        <button 
+          className="btn-crear-cuenta" 
+          onClick={() => setMostrarRegistro(true)}
+        >
+          Crear Cuenta
+        </button>
+      </div>
+    </div>
 
-        <div className="registro">
+    {/* Modal de registro */}
+    {mostrarRegistro && (
+      <div className="modal-overlay" onClick={() => setMostrarRegistro(false)}>
+        <div className="modal-registro" onClick={(e) => e.stopPropagation()}>
           <h2>Crear Cuenta</h2>
           <label>
             Usuario:
@@ -104,11 +118,19 @@ function Login() {
             />
           </label>
           <br />
-          <button onClick={addUser}>Crear cuenta</button>
+          <div className="botones-modal">
+            <button onClick={addUser}>Crear cuenta</button>
+            <button 
+              className="btn-cancelar" 
+              onClick={() => setMostrarRegistro(false)}
+            >
+              Cancelar
+            </button>
+          </div>
         </div>
       </div>
-    </div>
-  );
-}
+    )}
+  </div>
+);}
 
 export default Login;
