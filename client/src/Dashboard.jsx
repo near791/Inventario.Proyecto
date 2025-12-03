@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import Axios from "axios";
 import "./Dashboard.css";
+import Toast from './Toast';
+import ModalConfirmacion from './ModalConfirmacion';
 
 function Dashboard() {
   const [mostrarPanel, setMostrarPanel] = useState(false);
@@ -32,6 +34,10 @@ function Dashboard() {
   // Estado para usuario
   const [usuarioId, setUsuarioId] = useState(null);
   const [nombreUsuario, setNombreUsuario] = useState("");
+
+  // Estados para toasts y modales
+  const [toasts, setToasts] = useState([]);
+  const [modalConfirmacion, setModalConfirmacion] = useState(null);
 
   // Verificar si el usuario está logueado
 useEffect(() => {
@@ -135,12 +141,12 @@ useEffect(() => {
 
   const agregarProducto = () => {
     if (!nombreProducto || !cantidad) {
-      setMensaje("⚠️ Por favor completa nombre y cantidad");
+      mostrarToast("Por favor completa nombre y cantidad", "advertencia");
       return;
     }
 
     if (!productoExistente && !precio) {
-      setMensaje("⚠️ El precio es obligatorio para productos nuevos");
+      mostrarToast("El precio es obligatorio para productos nuevos", "advertencia");
       return;
     }
 
@@ -151,17 +157,18 @@ useEffect(() => {
       granel: granel,
     })
       .then((response) => {
-        setMensaje("✅ " + response.data.message);
+        mostrarToast(response.data.message, "exito");
         setNombreProducto("");
         setCantidad("");
         setPrecio("");
         setGranel(false);
         setProductoExistente(false);
         setProductoGranelExistente(false);
+        setMostrarPanel(false);
         cargarProductos();
       })
       .catch((error) => {
-        setMensaje("❌ " + (error?.response?.data?.message || "Error al agregar producto"));
+        mostrarToast(error?.response?.data?.message || "Error al agregar producto", "error");
       });
   };
 
@@ -187,28 +194,20 @@ useEffect(() => {
   };
 
   const venderProducto = () => {
-  console.log("=== DEBUG VENTA ===");
-  console.log("nombreVenta:", nombreVenta);
-  console.log("cantidadVenta:", cantidadVenta);
-  console.log("usuarioId:", usuarioId, "tipo:", typeof usuarioId);
-  console.log("productoSeleccionado:", productoSeleccionadoVenta);
-  console.log("==================");
+    if (!nombreVenta || !cantidadVenta) {
+      mostrarToast("Por favor completa nombre y cantidad", "advertencia");
+      return;
+    }
 
-  if (!nombreVenta || !cantidadVenta) {
-    setMensajeVenta("⚠️ Por favor completa nombre y cantidad");
-    return;
-  }
-
-  if (!productoSeleccionadoVenta) {
-    setMensajeVenta("⚠️ Debes seleccionar un producto de la lista");
-    return;
-  }
+    if (!productoSeleccionadoVenta) {
+      mostrarToast("Debes seleccionar un producto de la lista", "advertencia");
+      return;
+    }
 
     if (!usuarioId || usuarioId === null || isNaN(usuarioId)) {
-    setMensajeVenta("⚠️ Error: Usuario no identificado. Por favor cierra sesión e ingresa nuevamente.");
-    console.error("❌ usuarioId inválido:", usuarioId);
-    return;
-  }
+      mostrarToast("Usuario no identificado. Por favor cierra sesión e ingresa nuevamente", "error");
+      return;
+    }
 
     Axios.post("http://localhost:3001/productos/vender", {
       nombre: nombreVenta,
@@ -217,17 +216,30 @@ useEffect(() => {
     })
       .then((response) => {
         const datos = response.data;
-        setMensajeVenta(
-          `✅ ${datos.message}\n💰 Total: $${datos.total.toFixed(2)}\n📦 Stock restante: ${datos.nuevaCantidad} ${datos.granel ? 'kg' : 'unidades'}`
-        );
+        
+        // Verificar si el stock quedó por debajo del mínimo
+        if (datos.nuevaCantidad <= productoSeleccionadoVenta.stock_minimo) {
+          mostrarToast(
+            `⚠️ ALERTA: ${datos.message}. Stock quedó en ${datos.nuevaCantidad} ${datos.granel ? 'kg' : 'unidades'} (Mínimo: ${productoSeleccionadoVenta.stock_minimo})`,
+            "stock-bajo",
+            5000
+          );
+        } else {
+          mostrarToast(
+            `${datos.message} - Total: $${datos.total.toFixed(2)}`,
+            "exito"
+          );
+        }
+        
         setNombreVenta("");
         setCantidadVenta("");
         setProductoSeleccionadoVenta(null);
+        setMostrarVenta(false);
         cargarProductos();
         cargarAlertas();
       })
       .catch((error) => {
-        setMensajeVenta("❌ " + (error?.response?.data?.message || "Error al realizar la venta"));
+        mostrarToast(error?.response?.data?.message || "Error al realizar la venta", "error");
       });
   };
 
@@ -271,60 +283,86 @@ useEffect(() => {
   const guardarEdicion = () => {
     if (!productoEditando) return;
 
-    console.log("💾 Guardando edición:", productoEditando);
-
     Axios.put(`http://localhost:3001/productos/${productoEditando.id}`, productoEditando)
       .then((response) => {
-        alert("✅ " + response.data.message);
+        mostrarToast("Producto actualizado correctamente", "exito");
         setProductoEditando(null);
         cargarProductos();
         cargarAlertas();
         cargarPromociones();
       })
       .catch((error) => {
-        alert("❌ " + (error?.response?.data?.message || "Error al editar producto"));
+        mostrarToast(error?.response?.data?.message || "Error al editar producto", "error");
       });
   };
 
-  const eliminarProducto = (id) => {
-    if (!window.confirm("¿Estás seguro de eliminar este producto?")) return;
-
-    console.log("🗑️ Eliminando producto ID:", id);
+  const eliminarProducto = async (id) => {
+    const confirmar = await mostrarConfirmacion("¿Estás seguro de eliminar este producto?");
+    
+    if (!confirmar) return;
 
     Axios.delete(`http://localhost:3001/productos/${id}`)
       .then((response) => {
-        alert("✅ " + response.data.message);
+        mostrarToast("Producto eliminado correctamente", "exito");
         cargarProductos();
         cargarAlertas();
         cargarPromociones();
       })
       .catch((error) => {
-        alert("❌ " + (error?.response?.data?.message || "Error al eliminar producto"));
+        mostrarToast(error?.response?.data?.message || "Error al eliminar producto", "error");
       });
   };
 
-  const terminarPromocion = (id, nombreProducto) => {
-    if (!window.confirm(`¿Terminar la promoción de ${nombreProducto}?`)) return;
-
-    console.log("🎉 Terminando promoción del producto ID:", id);
+  const terminarPromocion = async (id, nombreProducto) => {
+    const confirmar = await mostrarConfirmacion(`¿Terminar la promoción de ${nombreProducto}?`);
+    
+    if (!confirmar) return;
 
     Axios.put(`http://localhost:3001/productos/${id}`, {
       descuento: 0
     })
       .then((response) => {
-        alert("✅ Promoción terminada correctamente");
+        mostrarToast("Promoción terminada correctamente", "exito");
         cargarProductos();
         cargarAlertas();
         cargarPromociones();
       })
       .catch((error) => {
-        alert("❌ " + (error?.response?.data?.message || "Error al terminar promoción"));
+        mostrarToast(error?.response?.data?.message || "Error al terminar promoción", "error");
       });
   };
 
   const toggleNotificaciones = () => {
     console.log("🔔 Toggle notificaciones. Estado actual:", mostrarNotificaciones);
     setMostrarNotificaciones(!mostrarNotificaciones);
+  };
+
+  // Función para mostrar toast
+  const mostrarToast = (mensaje, tipo = 'info', duracion = 3000) => {
+  const id = Date.now();
+  setToasts(prev => [...prev, { id, mensaje, tipo, duracion }]);
+  };
+
+// Función para cerrar toast
+  const cerrarToast = (id) => {
+  setToasts(prev => prev.filter(t => t.id !== id));
+  };
+
+  // Función para mostrar modal de confirmación
+  const mostrarConfirmacion = (mensaje) => {
+    return new Promise((resolve) => {
+      setModalConfirmacion({
+        mensaje,
+        onConfirmar: () => {
+          setModalConfirmacion(null);
+          resolve(true);
+        },
+        onCancelar: () => {
+          setModalConfirmacion(null);
+          resolve(false);
+        }
+      });
+    });
   };
 
   return (
@@ -719,8 +757,28 @@ useEffect(() => {
           </div>
         </div>
       )}
-    </div>
-  );
-}
+
+        {/* Toasts */}
+          {toasts.map((toast) => (
+            <Toast
+              key={toast.id}
+              mensaje={toast.mensaje}
+              tipo={toast.tipo}
+              duracion={toast.duracion}
+              onClose={() => cerrarToast(toast.id)}
+            />
+          ))}
+
+          {/* Modal de confirmación */}
+          {modalConfirmacion && (
+            <ModalConfirmacion
+              mensaje={modalConfirmacion.mensaje}
+              onConfirmar={modalConfirmacion.onConfirmar}
+              onCancelar={modalConfirmacion.onCancelar}
+            />
+          )}
+        </div>
+      );
+    }
 
 export default Dashboard;

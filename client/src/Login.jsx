@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Axios from "axios";
 import "./App.css";
+import Toast from './Toast';
 
 function Login() {
   const [Usuario, setUsuario] = useState("");
@@ -9,17 +10,18 @@ function Login() {
   const [loginContraseña, setLoginContraseña] = useState("");
   const [mensajeLogin, setMensajeLogin] = useState("");
   const [mostrarRegistro, setMostrarRegistro] = useState(false);
+  const [toasts, setToasts] = useState([]);
 
   const addUser = () => {
     Axios.post("http://localhost:3001/create", { Usuario, Contraseña })
       .then((response) => {
-        alert(response.data.message);
+        mostrarToast(response.data.message, "exito");
         setUsuario("");
         setContraseña("");
         setMostrarRegistro(false);
       })
       .catch((error) => {
-        alert(error?.response?.data?.message || "Error al registrar");
+        mostrarToast(error?.response?.data?.message || "Error al registrar", "error");
       });
   };
 
@@ -47,6 +49,15 @@ function Login() {
       .catch((error) => {
         setMensajeLogin(error?.response?.data?.message || "Error al ingresar");
       });
+  };
+
+  const mostrarToast = (mensaje, tipo = 'info') => {
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, mensaje, tipo }]);
+  };
+
+  const cerrarToast = (id) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
   };
 
 return (
@@ -131,7 +142,17 @@ return (
         </div>
       </div>
     )}
-  </div>
-);}
+    {/* Toasts */}
+      {toasts.map((toast) => (
+        <Toast
+          key={toast.id}
+          mensaje={toast.mensaje}
+          tipo={toast.tipo}
+          onClose={() => cerrarToast(toast.id)}
+        />
+      ))}
+    </div>
+  );
+}
 
 export default Login;
