@@ -174,6 +174,26 @@
   cursor: not-allowed;
 }
 
+.btn-cancelar-venta-panel {
+  width: 100%;
+  padding: 15px;
+  margin-top: 15px;
+  background: linear-gradient(135deg,  #e74c3c 0%, #c0392b 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-cancelar-venta-panel:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(149, 165, 166, 0.4);
+  background: linear-gradient(135deg, #ee5656 0%, #f40707 100%);
+}
+
 /* Carrito */
 .carrito-vacio {
   flex: 1;
@@ -342,3 +362,4 @@
     min-height: 400px;
   }
 }
+

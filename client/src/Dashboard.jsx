@@ -23,6 +23,13 @@ function Dashboard() {
   const [productoEditando, setProductoEditando] = useState(null);
   const [alertas, setAlertas] = useState([]);
   const [promociones, setPromociones] = useState([]);
+  
+  //Estados para mostrar datos
+  const [mostrarDatos, setMostrarDatos] = useState(false);
+  const [estadisticas, setEstadisticas] = useState(null);
+  const [productosMasVendidos, setProductosMasVendidos] = useState([]);
+  const [ventasRecientes, setVentasRecientes] = useState([]);
+  const [cargandoDatos, setCargandoDatos] = useState(false);
 
   // Estado para usuario
   const [usuarioId, setUsuarioId] = useState(null);
@@ -289,6 +296,55 @@ useEffect(() => {
     });
   };
 
+  //Funciones para mostrar datos
+  const cargarEstadisticas = async () => {
+    try {
+      setCargandoDatos(true);
+      
+      // Cargar estadísticas generales
+      const respStats = await Axios.get("http://localhost:3001/ventas/estadisticas");
+      console.log("📊 Estadísticas recibidas:", respStats.data);
+      
+      // Asegurar que los valores sean números
+      const statsLimpias = {
+        total_ventas: parseInt(respStats.data.total_ventas) || 0,
+        ingresos_totales: parseFloat(respStats.data.ingresos_totales) || 0,
+        unidades_vendidas: parseFloat(respStats.data.unidades_vendidas) || 0,
+        venta_promedio: parseFloat(respStats.data.venta_promedio) || 0
+      };
+      
+      setEstadisticas(statsLimpias);
+      
+      // Cargar productos más vendidos
+      const respProductos = await Axios.get("http://localhost:3001/ventas/productos-mas-vendidos");
+      console.log("🏆 Productos más vendidos:", respProductos.data);
+      setProductosMasVendidos(respProductos.data);
+      
+      // Cargar ventas recientes
+      const respVentas = await Axios.get("http://localhost:3001/ventas");
+      console.log("🕐 Ventas recientes:", respVentas.data);
+      setVentasRecientes(respVentas.data.slice(0, 10)); // Últimas 10 ventas
+      
+      setCargandoDatos(false);
+    } catch (error) {
+      console.error("❌ Error al cargar datos:", error);
+      console.error("Detalles del error:", error.response?.data);
+      mostrarToast("Error al cargar estadísticas", "error");
+      
+      // Establecer valores por defecto en caso de error
+      setEstadisticas({
+        total_ventas: 0,
+        ingresos_totales: 0,
+        unidades_vendidas: 0,
+        venta_promedio: 0
+      });
+      setProductosMasVendidos([]);
+      setVentasRecientes([]);
+      
+      setCargandoDatos(false);
+    }
+  };
+
   return (
     <div className="dashboard">
       {/* Botón de Notificaciones */}
@@ -371,7 +427,7 @@ useEffect(() => {
         <button className="btn-opcion" onClick={abrirVenta}>
           Vender Productos 💸
         </button>
-        <button className="btn-opcion">Datos 📊</button>
+        <button className="btn-opcion" >Datos 📊</button>
       </div>
 
       {/* Panel Agregar Productos */}
@@ -460,15 +516,13 @@ useEffect(() => {
 
       {/* Panel de Venta */}
       {mostrarVenta && (
-        <div className="panel-overlay" onClick={cerrarVenta}>
+        <div className="panel-overlay" onClick={(e) => {
+          // Solo cerrar si se hace clic en el overlay, no en el panel
+          if (e.target === e.currentTarget) {
+            cerrarVenta();
+          }
+        }}>
           <div className="panel-venta-fullscreen" onClick={(e) => e.stopPropagation()}>
-            <button 
-              className="btn-cerrar-venta-fullscreen" 
-              onClick={cerrarVenta}
-              title="Cerrar panel de ventas"
-            >
-              ✕
-            </button>
             <Vender 
               onCerrar={cerrarVenta}
               usuarioId={usuarioId}

@@ -386,17 +386,26 @@ app.get("/ventas/estadisticas", (req, res) => {
   db.query(
     `SELECT 
       COUNT(*) as total_ventas,
-      SUM(total) as ingresos_totales,
-      SUM(cantidad) as unidades_vendidas,
-      AVG(total) as venta_promedio
+      COALESCE(SUM(total), 0) as ingresos_totales,
+      COALESCE(SUM(cantidad), 0) as unidades_vendidas,
+      COALESCE(AVG(total), 0) as venta_promedio
     FROM ventas`,
     (err, result) => {
       if (err) {
         console.error("❌ Error al obtener estadísticas:", err);
         return res.status(500).json({ message: "Error al obtener estadísticas" });
       }
-      console.log("✅ Estadísticas obtenidas");
-      res.json(result[0]);
+      
+      // Asegurar que los valores sean números
+      const estadisticas = {
+        total_ventas: parseInt(result[0].total_ventas) || 0,
+        ingresos_totales: parseFloat(result[0].ingresos_totales) || 0,
+        unidades_vendidas: parseFloat(result[0].unidades_vendidas) || 0,
+        venta_promedio: parseFloat(result[0].venta_promedio) || 0
+      };
+      
+      console.log("✅ Estadísticas obtenidas:", estadisticas);
+      res.json(estadisticas);
     }
   );
 });

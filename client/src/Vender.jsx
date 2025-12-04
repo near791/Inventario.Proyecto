@@ -287,12 +287,19 @@ function Vender({ onCerrar, usuarioId, nombreUsuario }) {
           disabled={!productoSeleccionado}
         />
 
-        <button
+                <button
           className="btn-agregar-carrito"
           onClick={agregarAlCarrito}
           disabled={!productoSeleccionado || !cantidad}
         >
           ➕ Agregar al Carrito
+        </button>
+
+        <button
+          className="btn-cancelar-venta-panel"
+          onClick={cancelarVenta}
+        >
+          Cancelar
         </button>
       </div>
 
