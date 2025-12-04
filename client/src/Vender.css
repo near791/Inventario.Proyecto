@@ -1,0 +1,344 @@
+.vender-container {
+  display: flex;
+  gap: 20px;
+  height: calc(100vh - 40px);
+  padding: 20px;
+  background-color: #f5f5f5;
+}
+
+.vender-panel-izquierdo {
+  flex: 1;
+  background-color: white;
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.1);
+  overflow-y: auto;
+}
+
+.vender-panel-derecho {
+  width: 400px;
+  background-color: white;
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+.vender-panel-izquierdo h3,
+.vender-panel-derecho h3 {
+  margin-top: 0;
+  color: #f39c12;
+  text-align: center;
+  margin-bottom: 25px;
+  font-size: 24px;
+}
+
+.vender-panel-izquierdo label {
+  display: block;
+  margin-top: 20px;
+  margin-bottom: 8px;
+  font-weight: bold;
+  color: #333;
+  font-size: 15px;
+}
+
+.vender-panel-izquierdo input {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-size: 16px;
+  box-sizing: border-box;
+  transition: border-color 0.3s ease;
+}
+
+.vender-panel-izquierdo input:focus {
+  outline: none;
+  border-color: #f39c12;
+}
+
+.vender-panel-izquierdo input:disabled {
+  background-color: #f0f0f0;
+  cursor: not-allowed;
+}
+
+.input-con-sugerencias {
+  position: relative;
+}
+
+.sugerencias {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: white;
+  border: 2px solid #f39c12;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 1001;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.sugerencia-item-venta {
+  padding: 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+  transition: background-color 0.2s ease;
+}
+
+.sugerencia-item-venta:hover {
+  background-color: #fff8e1;
+}
+
+.sugerencia-item-venta:last-child {
+  border-bottom: none;
+}
+
+.sugerencia-nombre {
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.sugerencia-detalles {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.sugerencia-descuento {
+  color: #27ae60;
+  font-weight: bold;
+}
+
+.sugerencia-precio {
+  font-size: 14px;
+  font-weight: bold;
+  color: #f39c12;
+}
+
+.precio-original {
+  text-decoration: line-through;
+  color: #999;
+  font-size: 13px;
+}
+
+.precio-descuento {
+  color: #27ae60;
+  font-weight: bold;
+  margin-left: 5px;
+}
+
+.info-producto-venta {
+  background-color: #fff8e1;
+  padding: 15px;
+  border-radius: 8px;
+  margin: 15px 0;
+  border-left: 4px solid #f39c12;
+}
+
+.info-producto-venta p {
+  margin: 8px 0;
+  color: #333;
+  font-size: 14px;
+}
+
+.info-producto-venta strong {
+  color: #555;
+}
+
+.btn-agregar-carrito {
+  width: 100%;
+  padding: 15px;
+  margin-top: 25px;
+  background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-agregar-carrito:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4);
+}
+
+.btn-agregar-carrito:disabled {
+  background: #95a5a6;
+  cursor: not-allowed;
+}
+
+/* Carrito */
+.carrito-vacio {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: #999;
+  font-size: 18px;
+}
+
+.carrito-items {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 20px;
+  padding-right: 5px;
+}
+
+.carrito-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 15px;
+  margin-bottom: 12px;
+  background-color: #f8f9fa;
+  border-radius: 10px;
+  border-left: 4px solid #f39c12;
+  transition: all 0.2s ease;
+}
+
+.carrito-item:hover {
+  background-color: #fff8e1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.carrito-item-info {
+  flex: 1;
+}
+
+.carrito-item-nombre {
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 5px;
+  font-size: 15px;
+}
+
+.carrito-item-detalles {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 5px;
+}
+
+.carrito-item-descuento {
+  color: #27ae60;
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.carrito-item-subtotal {
+  font-size: 16px;
+  font-weight: bold;
+  color: #f39c12;
+  margin-top: 5px;
+}
+
+.btn-eliminar-carrito {
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: 10px;
+}
+
+.btn-eliminar-carrito:hover {
+  background-color: #c0392b;
+  transform: scale(1.1);
+}
+
+.carrito-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+  color: white;
+  border-radius: 10px;
+  margin-bottom: 15px;
+  font-size: 20px;
+}
+
+.carrito-total-monto {
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.carrito-botones {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.btn-realizar-venta,
+.btn-cancelar-venta {
+  width: 100%;
+  padding: 15px;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-realizar-venta {
+  background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+  color: white;
+}
+
+.btn-realizar-venta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(46, 204, 113, 0.4);
+}
+
+.btn-cancelar-venta {
+  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+  color: white;
+}
+
+.btn-cancelar-venta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(231, 76, 60, 0.4);
+}
+
+/* Scrollbar personalizado */
+.carrito-items::-webkit-scrollbar {
+  width: 8px;
+}
+
+.carrito-items::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.carrito-items::-webkit-scrollbar-thumb {
+  background: #f39c12;
+  border-radius: 10px;
+}
+
+.carrito-items::-webkit-scrollbar-thumb:hover {
+  background: #e67e22;
+}
+
+/* Responsivo */
+@media (max-width: 1024px) {
+  .vender-container {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .vender-panel-derecho {
+    width: 100%;
+    min-height: 400px;
+  }
+}

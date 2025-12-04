@@ -190,37 +190,27 @@ app.post("/productos/agregar", (req, res) => {
   });
 });
 
-//VENDER PRODUCTOS
+// VENDER PRODUCTOS CON CARRITO
 app.post("/productos/vender", (req, res) => {
-  const { nombre, cantidad, usuario_id } = req.body;
+  const { usuario_id, productos } = req.body;
   
-  console.log("💰 Vendiendo productos:", { nombre, cantidad, usuario_id });
-
-  if (!nombre || cantidad === undefined || cantidad === null) {
-    return res.status(400).json({ message: "Nombre y cantidad son obligatorios" });
-  }
-
-  console.log("📥 Datos recibidos:", { nombre, cantidad, usuario_id, tipo: typeof usuario_id });
+  console.log("💰 Vendiendo productos del carrito:", { usuario_id, cantidad_productos: productos.length });
 
   if (!usuario_id) {
-    console.error("❌ usuario_id es undefined o null");
     return res.status(400).json({ message: "Usuario no identificado. Por favor inicia sesión nuevamente." });
+  }
+
+  if (!productos || productos.length === 0) {
+    return res.status(400).json({ message: "El carrito está vacío" });
   }
 
   const usuarioIdNum = parseInt(usuario_id);
   if (isNaN(usuarioIdNum)) {
-    console.error("❌ usuario_id no es un número válido:", usuario_id);
     return res.status(400).json({ message: "ID de usuario inválido" });
   }
 
-  const cantidadNum = parseFloat(cantidad);
-
-  if (isNaN(cantidadNum) || cantidadNum <= 0) {
-    return res.status(400).json({ message: "La cantidad debe ser un número válido mayor a 0" });
-  }
-
-  // Primero obtener el nombre del usuario
-db.query("SELECT usuario FROM usuarios WHERE id = ?", [usuarioIdNum], (err, usuarioResult) => {
+  // Obtener el nombre del usuario
+  db.query("SELECT usuario FROM usuarios WHERE id = ?", [usuarioIdNum], (err, usuarioResult) => {
     if (err) {
       console.error("❌ Error SELECT usuario:", err);
       return res.status(500).json({ message: "Error al verificar usuario" });
@@ -232,100 +222,124 @@ db.query("SELECT usuario FROM usuarios WHERE id = ?", [usuarioIdNum], (err, usua
 
     const nombreUsuario = usuarioResult[0].usuario;
 
-    // Verificar que el producto exista
-    db.query("SELECT * FROM productos WHERE nombre = ?", [nombre], (err, result) => {
+    // Iniciar transacción
+    db.beginTransaction((err) => {
       if (err) {
-        console.error("❌ Error SELECT producto:", err);
-        return res.status(500).json({ message: "Error en la base de datos" });
+        console.error("❌ Error al iniciar transacción:", err);
+        return res.status(500).json({ message: "Error al procesar la venta" });
       }
 
-      if (result.length === 0) {
-        return res.status(404).json({ 
-          message: "Producto no encontrado. No se puede vender algo que no existe." 
-        });
-      }
+      let totalVentaGeneral = 0;
+      let ventasRealizadas = 0;
+      let productosConStockBajo = [];
 
-      const producto = result[0];
-      const cantidadActual = parseFloat(producto.cantidad);
-      
-      if (cantidadActual < cantidadNum) {
-        return res.status(400).json({ 
-          message: `Stock insuficiente. Solo hay ${cantidadActual} ${producto.granel ? 'kg' : 'unidades'} disponibles.` 
-        });
-      }
-
-      const nuevaCantidad = cantidadActual - cantidadNum;
-      const precioUnitario = producto.descuento > 0 
-        ? producto.precio * (1 - producto.descuento / 100)
-        : producto.precio;
-      const totalVenta = cantidadNum * precioUnitario;
-      
-      console.log(`💵 Cálculo: ${cantidadNum} x $${precioUnitario.toFixed(2)} = $${totalVenta.toFixed(2)}`);
-      
-      // Iniciar transacción
-      db.beginTransaction((err) => {
-        if (err) {
-          console.error("❌ Error al iniciar transacción:", err);
-          return res.status(500).json({ message: "Error al procesar la venta" });
-        }
-
-        // 1. Actualizar stock del producto
-        db.query(
-          "UPDATE productos SET cantidad = ? WHERE id = ?",
-          [nuevaCantidad, producto.id],
-          (err) => {
+      // Función recursiva para procesar cada producto del carrito
+      const procesarProducto = (index) => {
+        if (index >= productos.length) {
+          // Todos los productos procesados, confirmar transacción
+          db.commit((err) => {
             if (err) {
               return db.rollback(() => {
-                console.error("❌ Error UPDATE productos:", err);
-                res.status(500).json({ message: "Error al actualizar el stock" });
+                console.error("❌ Error al confirmar transacción:", err);
+                res.status(500).json({ message: "Error al confirmar la venta" });
               });
             }
 
-            // 2. Registrar la venta en la tabla ventas
-            db.query(
-              `INSERT INTO ventas (usuario_id, usuario_nombre, producto_id, producto_nombre, cantidad, precio_unitario, total) 
-               VALUES (?, ?, ?, ?, ?, ?, ?)`,
-              [usuario_id, nombreUsuario, producto.id, producto.nombre, cantidadNum, precioUnitario, totalVenta],
-              (err, ventaResult) => {
-                if (err) {
-                  return db.rollback(() => {
-                    console.error("❌ Error INSERT ventas:", err);
-                    res.status(500).json({ message: "Error al registrar la venta" });
-                  });
-                }
+            console.log("✅ Venta múltiple registrada exitosamente:", {
+              usuario: nombreUsuario,
+              productos_vendidos: ventasRealizadas,
+              total_general: totalVentaGeneral
+            });
 
-                // Confirmar transacción
-                db.commit((err) => {
+            res.json({ 
+              message: "Venta realizada correctamente", 
+              productos_vendidos: ventasRealizadas,
+              total_general: totalVentaGeneral,
+              productos_stock_bajo: productosConStockBajo
+            });
+          });
+          return;
+        }
+
+        const item = productos[index];
+        const { producto_id, cantidad, precio_unitario, subtotal } = item;
+
+        // Verificar producto y stock
+        db.query("SELECT * FROM productos WHERE id = ?", [producto_id], (err, result) => {
+          if (err) {
+            return db.rollback(() => {
+              console.error("❌ Error SELECT producto:", err);
+              res.status(500).json({ message: "Error al verificar producto" });
+            });
+          }
+
+          if (result.length === 0) {
+            return db.rollback(() => {
+              res.status(404).json({ message: `Producto ID ${producto_id} no encontrado` });
+            });
+          }
+
+          const producto = result[0];
+          const cantidadActual = parseFloat(producto.cantidad);
+          
+          if (cantidadActual < cantidad) {
+            return db.rollback(() => {
+              res.status(400).json({ 
+                message: `Stock insuficiente para ${producto.nombre}. Solo hay ${cantidadActual} disponibles.` 
+              });
+            });
+          }
+
+          const nuevaCantidad = cantidadActual - cantidad;
+
+          // Actualizar stock del producto
+          db.query(
+            "UPDATE productos SET cantidad = ? WHERE id = ?",
+            [nuevaCantidad, producto_id],
+            (err) => {
+              if (err) {
+                return db.rollback(() => {
+                  console.error("❌ Error UPDATE productos:", err);
+                  res.status(500).json({ message: "Error al actualizar el stock" });
+                });
+              }
+
+              // Registrar la venta
+              db.query(
+                `INSERT INTO ventas (usuario_id, usuario_nombre, producto_id, producto_nombre, cantidad, precio_unitario, total) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                [usuarioIdNum, nombreUsuario, producto_id, producto.nombre, cantidad, precio_unitario, subtotal],
+                (err) => {
                   if (err) {
                     return db.rollback(() => {
-                      console.error("❌ Error al confirmar transacción:", err);
-                      res.status(500).json({ message: "Error al confirmar la venta" });
+                      console.error("❌ Error INSERT ventas:", err);
+                      res.status(500).json({ message: "Error al registrar la venta" });
                     });
                   }
 
-                  console.log("✅ Venta registrada exitosamente:", {
-                    venta_id: ventaResult.insertId,
-                    usuario: nombreUsuario,
-                    producto: producto.nombre,
-                    cantidad: cantidadNum,
-                    total: totalVenta
-                  });
+                  totalVentaGeneral += subtotal;
+                  ventasRealizadas++;
 
-                  res.json({ 
-                    message: "Venta realizada correctamente", 
-                    venta_id: ventaResult.insertId,
-                    nuevaCantidad, 
-                    cantidadVendida: cantidadNum,
-                    precioUnitario: precioUnitario,
-                    total: totalVenta,
-                    granel: producto.granel
-                  });
-                });
-              }
-            );
-          }
-        );
-      });
+                  // Verificar si quedó stock bajo
+                  if (nuevaCantidad <= producto.stock_minimo) {
+                    productosConStockBajo.push({
+                      nombre: producto.nombre,
+                      cantidad_actual: nuevaCantidad,
+                      stock_minimo: producto.stock_minimo
+                    });
+                  }
+
+                  // Procesar siguiente producto
+                  procesarProducto(index + 1);
+                }
+              );
+            }
+          );
+        });
+      };
+
+      // Iniciar procesamiento del primer producto
+      procesarProducto(0);
     });
   });
 });
