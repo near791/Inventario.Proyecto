@@ -348,7 +348,7 @@ app.post("/productos/vender", (req, res) => {
 app.get("/ventas", (req, res) => {
   console.log("📊 Obteniendo historial de ventas...");
   db.query(
-    "SELECT * FROM ventas ORDER BY fecha DESC",
+    "SELECT *, DATE_FORMAT(fecha, '%d/%m/%Y %H:%i:%s') as fecha_formateada FROM ventas ORDER BY fecha DESC",
     (err, result) => {
       if (err) {
         console.error("❌ Error al obtener ventas:", err);
@@ -379,60 +379,233 @@ app.get("/ventas/usuario/:usuario_id", (req, res) => {
   );
 });
 
-// Obtener estadísticas de ventas
+// Obtener estadísticas de ventas CON FILTRO
 app.get("/ventas/estadisticas", (req, res) => {
-  console.log("📈 Obteniendo estadísticas de ventas...");
+  const { mes, anio } = req.query;
+  console.log("📈 Obteniendo estadísticas con filtros:", { mes, anio });
   
-  db.query(
-    `SELECT 
+  let filtroFecha = "";
+  const params = [];
+  
+  if (mes && anio) {
+    filtroFecha = "WHERE MONTH(v.fecha) = ? AND YEAR(v.fecha) = ?";
+    params.push(parseInt(mes), parseInt(anio));
+  } else if (anio) {
+    filtroFecha = "WHERE YEAR(v.fecha) = ?";
+    params.push(parseInt(anio));
+  }
+  
+  const query = `
+    SELECT 
       COUNT(*) as total_ventas,
-      COALESCE(SUM(total), 0) as ingresos_totales,
-      COALESCE(SUM(cantidad), 0) as unidades_vendidas,
-      COALESCE(AVG(total), 0) as venta_promedio
-    FROM ventas`,
-    (err, result) => {
-      if (err) {
-        console.error("❌ Error al obtener estadísticas:", err);
-        return res.status(500).json({ message: "Error al obtener estadísticas" });
-      }
-      
-      // Asegurar que los valores sean números
-      const estadisticas = {
-        total_ventas: parseInt(result[0].total_ventas) || 0,
-        ingresos_totales: parseFloat(result[0].ingresos_totales) || 0,
-        unidades_vendidas: parseFloat(result[0].unidades_vendidas) || 0,
-        venta_promedio: parseFloat(result[0].venta_promedio) || 0
-      };
-      
-      console.log("✅ Estadísticas obtenidas:", estadisticas);
-      res.json(estadisticas);
+      COALESCE(SUM(v.total), 0) as ingresos_totales,
+      COALESCE(SUM(CASE 
+        WHEN p.granel = 1 THEN v.cantidad 
+        ELSE 0 
+      END), 0) as unidades_granel,
+      COALESCE(SUM(CASE 
+        WHEN p.granel = 0 OR p.granel IS NULL THEN v.cantidad 
+        ELSE 0 
+      END), 0) as unidades_normales,
+      COALESCE(AVG(v.total), 0) as venta_promedio
+    FROM ventas v
+    INNER JOIN productos p ON v.producto_id = p.id
+    ${filtroFecha}
+  `;
+  
+  console.log("📊 Query SQL:", query);
+  console.log("📊 Params:", params);
+  
+  db.query(query, params, (err, result) => {
+    if (err) {
+      console.error("❌ Error al obtener estadísticas:", err);
+      return res.status(500).json({ message: "Error al obtener estadísticas" });
     }
-  );
+    
+    const estadisticas = {
+      total_ventas: parseInt(result[0].total_ventas) || 0,
+      ingresos_totales: parseFloat(result[0].ingresos_totales) || 0,
+      unidades_granel: parseFloat(result[0].unidades_granel) || 0,
+      unidades_normales: parseFloat(result[0].unidades_normales) || 0,
+      venta_promedio: parseFloat(result[0].venta_promedio) || 0
+    };
+    
+    console.log("✅ Estadísticas calculadas:", estadisticas);
+    res.json(estadisticas);
+  });
 });
 
-// Obtener productos más vendidos
+// Obtener productos más vendidos CON FILTRO
 app.get("/ventas/productos-mas-vendidos", (req, res) => {
-  console.log("🏆 Obteniendo productos más vendidos...");
+  const { mes, anio, limite = 10 } = req.query;
+  console.log("🏆 Obteniendo productos más vendidos con filtros:", { mes, anio, limite });
   
-  db.query(
-    `SELECT 
+  let filtroFecha = "";
+  const params = [];
+  
+  if (mes && anio) {
+    filtroFecha = "WHERE MONTH(fecha) = ? AND YEAR(fecha) = ?";
+    params.push(parseInt(mes), parseInt(anio));
+  } else if (anio) {
+    filtroFecha = "WHERE YEAR(fecha) = ?";
+    params.push(parseInt(anio));
+  }
+  
+  params.push(parseInt(limite));
+  
+  const query = `
+    SELECT 
+      producto_id,
       producto_nombre,
       SUM(cantidad) as cantidad_total,
       SUM(total) as ingresos_totales,
-      COUNT(*) as num_ventas
+      COUNT(*) as num_ventas,
+      AVG(precio_unitario) as precio_promedio
     FROM ventas 
+    ${filtroFecha}
     GROUP BY producto_id, producto_nombre
     ORDER BY cantidad_total DESC
-    LIMIT 10`,
-    (err, result) => {
-      if (err) {
-        console.error("❌ Error al obtener productos más vendidos:", err);
-        return res.status(500).json({ message: "Error al obtener productos más vendidos" });
-      }
-      console.log("✅ Productos más vendidos obtenidos:", result.length);
-      res.json(result);
+    LIMIT ?
+  `;
+  
+  db.query(query, params, (err, result) => {
+    if (err) {
+      console.error("❌ Error al obtener productos más vendidos:", err);
+      return res.status(500).json({ message: "Error al obtener productos más vendidos" });
     }
-  );
+    console.log("✅ Productos más vendidos obtenidos:", result.length);
+    res.json(result);
+  });
+});
+
+// Obtener historial de ventas CON FILTRO
+app.get("/ventas/historial", (req, res) => {
+  const { mes, anio, limite = 50 } = req.query;
+  console.log("📋 Obteniendo historial con filtros:", { mes, anio, limite });
+  
+  let filtroFecha = "";
+  const params = [];
+  
+  if (mes && anio) {
+    filtroFecha = "WHERE MONTH(fecha) = ? AND YEAR(fecha) = ?";
+    params.push(parseInt(mes), parseInt(anio));
+  } else if (anio) {
+    filtroFecha = "WHERE YEAR(fecha) = ?";
+    params.push(parseInt(anio));
+  }
+  
+  params.push(parseInt(limite));
+  
+  const query = `
+    SELECT 
+      id,
+      usuario_id,
+      usuario_nombre,
+      producto_id,
+      producto_nombre,
+      cantidad,
+      precio_unitario,
+      total,
+      DATE_FORMAT(fecha, '%d/%m/%Y %H:%i:%s') as fecha_formateada,
+      fecha
+    FROM ventas
+    ${filtroFecha}
+    ORDER BY fecha DESC
+    LIMIT ?
+  `;
+  
+  db.query(query, params, (err, result) => {
+    if (err) {
+      console.error("❌ Error al obtener historial:", err);
+      return res.status(500).json({ message: "Error al obtener historial" });
+    }
+    console.log("✅ Historial obtenido:", result.length, "registros");
+    res.json(result);
+  });
+});
+
+// Obtener años disponibles para el filtro
+app.get("/ventas/anios-disponibles", (req, res) => {
+  console.log("📅 Obteniendo años disponibles...");
+  
+  const query = `
+    SELECT DISTINCT YEAR(fecha) as anio 
+    FROM ventas 
+    WHERE fecha IS NOT NULL
+    ORDER BY anio DESC
+  `;
+  
+  db.query(query, (err, result) => {
+    if (err) {
+      console.error("❌ Error al obtener años:", err);
+      return res.status(500).json({ message: "Error al obtener años disponibles" });
+    }
+    const anios = result.map(r => r.anio);
+    console.log("✅ Años disponibles:", anios);
+    res.json(anios);
+  });
+});
+
+// Ventas por usuario CON FILTRO
+app.get("/ventas/por-usuario", (req, res) => {
+  const { mes, anio } = req.query;
+  console.log("👥 Obteniendo ventas por usuario con filtros:", { mes, anio });
+  
+  let filtroFecha = "";
+  const params = [];
+  
+  if (mes && anio) {
+    filtroFecha = "WHERE MONTH(fecha) = ? AND YEAR(fecha) = ?";
+    params.push(parseInt(mes), parseInt(anio));
+  } else if (anio) {
+    filtroFecha = "WHERE YEAR(fecha) = ?";
+    params.push(parseInt(anio));
+  }
+  
+  const query = `
+    SELECT 
+      usuario_id,
+      usuario_nombre,
+      COUNT(*) as total_ventas,
+      SUM(total) as ingresos_generados,
+      SUM(cantidad) as unidades_vendidas
+    FROM ventas
+    ${filtroFecha}
+    GROUP BY usuario_id, usuario_nombre
+    ORDER BY ingresos_generados DESC
+  `;
+  
+  db.query(query, params, (err, result) => {
+    if (err) {
+      console.error("❌ Error en ventas por usuario:", err);
+      return res.status(500).json({ message: "Error al obtener ventas por usuario" });
+    }
+    console.log("✅ Ventas por usuario obtenidas:", result.length);
+    res.json(result);
+  });
+});
+
+// Ventas del día
+app.get("/ventas/hoy", (req, res) => {
+  console.log("📅 Obteniendo ventas del día...");
+  
+  const query = `
+    SELECT 
+      COUNT(*) as total_ventas,
+      COALESCE(SUM(total), 0) as ingresos_hoy,
+      COALESCE(SUM(cantidad), 0) as unidades_vendidas
+    FROM ventas
+    WHERE DATE(fecha) = CURDATE()
+  `;
+  
+  db.query(query, (err, result) => {
+    if (err) {
+      console.error("❌ Error en ventas del día:", err);
+      return res.status(500).json({ message: "Error al obtener ventas del día" });
+    }
+    console.log("✅ Ventas del día obtenidas:", result[0]);
+    res.json(result[0]);
+  });
 });
 
 // Obtener productos con stock bajo (alertas)
@@ -535,17 +708,21 @@ app.delete("/productos/:id", (req, res) => {
 app.listen(3001, () => {
   console.log("🚀 Servidor corriendo en el puerto 3001");
   console.log("📌 Rutas disponibles:");
-  console.log("   POST /create");
-  console.log("   POST /login");
-  console.log("   GET  /productos");
-  console.log("   POST /productos/agregar");
-  console.log("   POST /productos/vender");
-  console.log("   GET  /productos/alertas");
-  console.log("   GET  /productos/promociones");
-  console.log("   PUT  /productos/:id");
+  console.log("   POST   /create");
+  console.log("   POST   /login");
+  console.log("   GET    /productos");
+  console.log("   POST   /productos/agregar");
+  console.log("   POST   /productos/vender");
+  console.log("   GET    /productos/alertas");
+  console.log("   GET    /productos/promociones");
+  console.log("   PUT    /productos/:id");
   console.log("   DELETE /productos/:id");
-  console.log("   GET  /ventas");
-  console.log("   GET  /ventas/usuario/:usuario_id");
-  console.log("   GET  /ventas/estadisticas");
-  console.log("   GET  /ventas/productos-mas-vendidos");
+  console.log("   GET    /ventas");
+  console.log("   GET    /ventas/usuario/:usuario_id");
+  console.log("   GET    /ventas/estadisticas (filtros: ?mes=1&anio=2024)");
+  console.log("   GET    /ventas/productos-mas-vendidos (filtros: ?mes=1&anio=2024&limite=10)");
+  console.log("   GET    /ventas/historial (filtros: ?mes=1&anio=2024&limite=50)");
+  console.log("   GET    /ventas/anios-disponibles");
+  console.log("   GET    /ventas/por-usuario (filtros: ?mes=1&anio=2024)");
+  console.log("   GET    /ventas/hoy");
 });

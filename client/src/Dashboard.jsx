@@ -30,6 +30,11 @@ function Dashboard() {
   const [productosMasVendidos, setProductosMasVendidos] = useState([]);
   const [ventasRecientes, setVentasRecientes] = useState([]);
   const [cargandoDatos, setCargandoDatos] = useState(false);
+  const [filtros, setFiltros] = useState({
+  mes: null,
+  anio: new Date().getFullYear()
+  });
+  const [aniosDisponibles, setAniosDisponibles] = useState([]);
 
   // Estado para usuario
   const [usuarioId, setUsuarioId] = useState(null);
@@ -38,6 +43,22 @@ function Dashboard() {
   // Estados para toasts y modales
   const [toasts, setToasts] = useState([]);
   const [modalConfirmacion, setModalConfirmacion] = useState(null);
+
+  //array de meses para mostrar datos
+  const meses = [
+  { valor: 1, nombre: 'Enero' },
+  { valor: 2, nombre: 'Febrero' },
+  { valor: 3, nombre: 'Marzo' },
+  { valor: 4, nombre: 'Abril' },
+  { valor: 5, nombre: 'Mayo' },
+  { valor: 6, nombre: 'Junio' },
+  { valor: 7, nombre: 'Julio' },
+  { valor: 8, nombre: 'Agosto' },
+  { valor: 9, nombre: 'Septiembre' },
+  { valor: 10, nombre: 'Octubre' },
+  { valor: 11, nombre: 'Noviembre' },
+  { valor: 12, nombre: 'Diciembre' }
+  ];
 
   // Verificar si el usuario está logueado
 useEffect(() => {
@@ -63,6 +84,18 @@ useEffect(() => {
       cargarProductos();
     }
   }, [mostrarPanel, mostrarInventario, mostrarVenta]);
+
+  //cargar años para mostrar
+  useEffect(() => {
+    cargarAniosDisponibles();
+  }, []);
+
+  // Recargar datos cuando cambien los filtros
+  useEffect(() => {
+    if (mostrarDatos) {
+      cargarEstadisticas();
+    }
+    }, [filtros, mostrarDatos]);
 
   // Cargar alertas y promociones al montar el componente
   useEffect(() => {
@@ -109,6 +142,15 @@ useEffect(() => {
         console.error("❌ Error al cargar promociones:", error);
       });
   };
+
+  const cargarAniosDisponibles = async () => {
+    try {
+      const resp = await Axios.get("http://localhost:3001/ventas/anios-disponibles");
+      console.log("📅 Años disponibles:", resp.data);
+      setAniosDisponibles(resp.data);
+    } catch (error) {
+      console.error("❌ Error al cargar años:", error);
+    }};
 
   const filtrarProductos = (texto) => {
     setNombreProducto(texto);
@@ -206,6 +248,12 @@ useEffect(() => {
     setMostrarInventario(true);
   };
 
+  const abrirDatos = () => {
+    console.log("📊 Abriendo panel de datos");
+    setMostrarDatos(true);
+    cargarEstadisticas();
+  };
+
   const editarProducto = (producto) => {
     console.log("✏️ Editando producto:", producto);
     setProductoEditando(producto);
@@ -301,41 +349,44 @@ useEffect(() => {
     try {
       setCargandoDatos(true);
       
+      const params = new URLSearchParams();
+      if (filtros.mes) params.append('mes', filtros.mes);
+      if (filtros.anio) params.append('anio', filtros.anio);
+      
       // Cargar estadísticas generales
-      const respStats = await Axios.get("http://localhost:3001/ventas/estadisticas");
+      const respStats = await Axios.get(`http://localhost:3001/ventas/estadisticas?${params}`);
       console.log("📊 Estadísticas recibidas:", respStats.data);
       
-      // Asegurar que los valores sean números
       const statsLimpias = {
         total_ventas: parseInt(respStats.data.total_ventas) || 0,
         ingresos_totales: parseFloat(respStats.data.ingresos_totales) || 0,
-        unidades_vendidas: parseFloat(respStats.data.unidades_vendidas) || 0,
+        unidades_granel: parseFloat(respStats.data.unidades_granel) || 0,
+        unidades_normales: parseFloat(respStats.data.unidades_normales) || 0,
         venta_promedio: parseFloat(respStats.data.venta_promedio) || 0
-      };
-      
+      };     
+
       setEstadisticas(statsLimpias);
       
       // Cargar productos más vendidos
-      const respProductos = await Axios.get("http://localhost:3001/ventas/productos-mas-vendidos");
+      const respProductos = await Axios.get(`http://localhost:3001/ventas/productos-mas-vendidos?${params}&limite=10`);
       console.log("🏆 Productos más vendidos:", respProductos.data);
       setProductosMasVendidos(respProductos.data);
       
-      // Cargar ventas recientes
-      const respVentas = await Axios.get("http://localhost:3001/ventas");
-      console.log("🕐 Ventas recientes:", respVentas.data);
-      setVentasRecientes(respVentas.data.slice(0, 10)); // Últimas 10 ventas
+      // Cargar historial de ventas
+      const respHistorial = await Axios.get(`http://localhost:3001/ventas/historial?${params}&limite=50`);
+      console.log("🕐 Historial de ventas:", respHistorial.data);
+      setVentasRecientes(respHistorial.data);
       
       setCargandoDatos(false);
     } catch (error) {
       console.error("❌ Error al cargar datos:", error);
-      console.error("Detalles del error:", error.response?.data);
       mostrarToast("Error al cargar estadísticas", "error");
-      
-      // Establecer valores por defecto en caso de error
+
       setEstadisticas({
         total_ventas: 0,
         ingresos_totales: 0,
-        unidades_vendidas: 0,
+        unidades_granel: 0,
+        unidades_normales: 0,
         venta_promedio: 0
       });
       setProductosMasVendidos([]);
@@ -427,7 +478,7 @@ useEffect(() => {
         <button className="btn-opcion" onClick={abrirVenta}>
           Vender Productos 💸
         </button>
-        <button className="btn-opcion" >Datos 📊</button>
+        <button className="btn-opcion" onClick={abrirDatos}>Datos 📊</button>
       </div>
 
       {/* Panel Agregar Productos */}
@@ -675,6 +726,178 @@ useEffect(() => {
               onConfirmar={modalConfirmacion.onConfirmar}
               onCancelar={modalConfirmacion.onCancelar}
             />
+          )}
+          {/* Panel de Datos */}
+          {mostrarDatos && (
+            <div className="panel-overlay" onClick={() => setMostrarDatos(false)}>
+              <div className="panel-datos" onClick={(e) => e.stopPropagation()}>
+                <h3>📊 Panel de Datos y Estadísticas</h3>
+                
+                {/* Filtros */}
+                <div className="filtros-contenedor">
+                  <div className="filtro-grupo">
+                    <label>Año:</label>
+                    <select 
+                      value={filtros.anio || ''} 
+                      onChange={(e) => setFiltros({...filtros, anio: e.target.value})}
+                    >
+                      <option value="">Todos</option>
+                      {aniosDisponibles.map(anio => (
+                        <option key={anio} value={anio}>{anio}</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div className="filtro-grupo">
+                    <label>Mes:</label>
+                    <select 
+                      value={filtros.mes || ''} 
+                      onChange={(e) => setFiltros({...filtros, mes: e.target.value})}
+                    >
+                      <option value="">Todos</option>
+                      {meses.map(mes => (
+                        <option key={mes.valor} value={mes.valor}>{mes.nombre}</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <button 
+                    className="btn-limpiar-filtros"
+                    onClick={() => setFiltros({ mes: null, anio: new Date().getFullYear() })}
+                  >
+                    Limpiar filtros
+                  </button>
+                </div>
+
+                {cargandoDatos ? (
+                  <div className="cargando-datos">
+                    <p>⏳ Cargando datos...</p>
+                  </div>
+                ) : (
+                  <>
+                    {/* Estadísticas Generales */}
+                    {estadisticas && (
+                      <div className="estadisticas-grid">
+                        <div className="estadistica-card">
+                          <div className="estadistica-icono">📦</div>
+                          <div className="estadistica-info">
+                            <h4>Total Ventas</h4>
+                            <p className="estadistica-valor">{estadisticas.total_ventas}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="estadistica-card">
+                          <div className="estadistica-icono">💰</div>
+                          <div className="estadistica-info">
+                            <h4>Ingresos Totales</h4>
+                            <p className="estadistica-valor">${estadisticas.ingresos_totales.toFixed(2)}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="estadistica-card">
+                          <div className="estadistica-card unidades-card">
+                            <div className="estadistica-icono">📊</div>
+                            <div className="estadistica-info">
+                              <h4>Unidades Vendidas</h4>
+                              <div className="unidades-desglose">
+                                <div className="unidad-item">
+                                  <span className="unidad-label">🔢 Granel:</span>
+                                  <span className="unidad-valor">{estadisticas.unidades_granel.toFixed(2)} kg</span>
+                                </div>
+                                <div className="unidad-item">
+                                  <span className="unidad-label">📦 Unidad:</span>
+                                  <span className="unidad-valor">{estadisticas.unidades_normales.toFixed(0)}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="estadistica-card">
+                          <div className="estadistica-icono">💵</div>
+                          <div className="estadistica-info">
+                            <h4>Venta Promedio</h4>
+                            <p className="estadistica-valor">${estadisticas.venta_promedio.toFixed(2)}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Productos Más Vendidos */}
+                    <div className="seccion-datos">
+                      <h4>🏆 Top 10 Productos Más Vendidos</h4>
+                      {productosMasVendidos.length === 0 ? (
+                        <p className="sin-datos">No hay datos de ventas para este período</p>
+                      ) : (
+                        <div className="tabla-container">
+                          <table className="tabla-datos">
+                            <thead>
+                              <tr>
+                                <th>#</th>
+                                <th>Producto</th>
+                                <th>Cantidad</th>
+                                <th>Ingresos</th>
+                                <th>N° Ventas</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {productosMasVendidos.map((p, index) => (
+                                <tr key={p.producto_id}>
+                                  <td className="posicion">{index + 1}</td>
+                                  <td><strong>{p.producto_nombre}</strong></td>
+                                  <td>{parseFloat(p.cantidad_total).toFixed(2)}</td>
+                                  <td className="ingreso">${parseFloat(p.ingresos_totales).toFixed(2)}</td>
+                                  <td>{p.num_ventas}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Historial de Ventas Recientes */}
+                    <div className="seccion-datos">
+                      <h4>🕐 Historial de Ventas Recientes</h4>
+                      {ventasRecientes.length === 0 ? (
+                        <p className="sin-datos">No hay ventas registradas para este período</p>
+                      ) : (
+                        <div className="tabla-container historial-scroll">
+                          <table className="tabla-datos">
+                            <thead>
+                              <tr>
+                                <th>Fecha</th>
+                                <th>Usuario</th>
+                                <th>Producto</th>
+                                <th>Cantidad</th>
+                                <th>Precio Unit.</th>
+                                <th>Total</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {ventasRecientes.map((v) => (
+                                <tr key={v.id}>
+                                  <td className="fecha">{v.fecha_formateada}</td>
+                                  <td>{v.usuario_nombre}</td>
+                                  <td>{v.producto_nombre}</td>
+                                  <td>{parseFloat(v.cantidad).toFixed(2)}</td>
+                                  <td>${parseFloat(v.precio_unitario).toFixed(2)}</td>
+                                  <td className="total-venta">${parseFloat(v.total).toFixed(2)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                <button className="btn-cancelar" onClick={() => setMostrarDatos(false)}>
+                  Cerrar
+                </button>
+              </div>
+            </div>
           )}
         </div>
       );

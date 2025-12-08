@@ -199,7 +199,7 @@ function Vender({ onCerrar, usuarioId, nombreUsuario }) {
   return (
     <div className="vender-container">
       <div className="vender-panel-izquierdo">
-        <h3>💸 Vender Productos</h3>
+        <h3>💵 Vender Productos</h3>
         
         <label>Producto:</label>
         <div className="input-con-sugerencias">
@@ -299,7 +299,7 @@ function Vender({ onCerrar, usuarioId, nombreUsuario }) {
           className="btn-cancelar-venta-panel"
           onClick={cancelarVenta}
         >
-          Cancelar
+          ❌ Cancelar
         </button>
       </div>
 
