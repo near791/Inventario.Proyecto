@@ -475,7 +475,7 @@ useEffect(() => {
         </div>
       )}
 
-      <h2>Mi Gestor de Inventario</h2>
+      <h2>InfoStock</h2>
       {nombreUsuario && <p className="usuario-actual">👤 Usuario: {nombreUsuario}</p>}
       
       <div className="opciones">
@@ -502,8 +502,17 @@ useEffect(() => {
 
       {/* Panel de Ayuda */}
       {mostrarAyuda && (
+      <div className="ayuda-overlay">
         <div className="panel-ayuda">
-          <div> 
+          
+          <button 
+            className="btn-cerrar-ayuda"
+            onClick={() => setMostrarAyuda(false)}
+          >
+            ✕
+          </button>
+
+          <div>
           <p> Bienvenido al Gestor de Inventario Tienda Goyito!😊 </p> 
           <p> Como podrás ver, aquí se puede "Agregar producto", "Ver Inventario", "Vender productos" y "Ver Datos". </p>
 
@@ -547,16 +556,9 @@ useEffect(() => {
           <p> Finalmente, el panel de notificaciones nos brindará alertas sobre productos agotados y promociones activas.
           </p>
           <p> Para mayor información diríjase con un miembro certificado de Goyito S.A. Gracias por preferir trabajar con nosotros.</p>
-          
           </div>
-          <button 
-            className="btn-cancelar-ayuda" 
-            onClick={() => setMostrarAyuda(false)}
-            title="Cerrar ayuda"
-          >
-            ✕
-          </button>
         </div>
+      </div>
       )}
 
 

@@ -1,3 +1,4 @@
+/*fondo del panel de opciones*/
 .dashboard {
   height: 100vh;
   width: 100%;
@@ -10,6 +11,87 @@
   align-items: center;
   justify-content: center;
   position: relative;
+}
+
+.btn-ayuda {
+  position: absolute;     
+  top: 20px;           
+  left: 20px;          
+  z-index: 9999;  
+  background-color: #c7d348;
+  color: rgb(0, 0, 0);
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 100;
+}
+
+.btn-ayuda:hover {
+  background-color: #e2f608;
+  transform: translateY(-2px);
+}
+
+/* Fondo oscuro del popup */
+.ayuda-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.55);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+/* Caja del panel de ayuda */
+.panel-ayuda {
+  background: #ffffff;
+  width: 70%;
+  max-width: 800px;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+  position: relative;
+  animation: fadeInScale 0.25s ease;
+}
+
+/* Animación */
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Botón de cerrar (X) */
+.btn-cerrar-ayuda {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  border: none;
+  background: #e74c3c;
+  color: white;
+  padding: 7px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 16px;
+}
+
+.btn-cerrar-ayuda:hover {
+  background: #c0392b;
+  transform: translateY(-2px);
 }
 
 .btn-cerrar-sesion {
@@ -176,21 +258,38 @@
 }
 
 .dashboard h2 {
-  background-color: #ffffffbb;
-  padding: 20px 30px;
-  border-radius: 10px;
-  margin-bottom: 10px;
-  font-size: 24px;
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  padding: 26px 45px;
+  border-radius: 14px;
+  margin-bottom: 15px;
+  font-size: 32px;
+  font-weight: 700;
+  color: #065f46; /* Verde oscuro elegante y legible */
+  box-shadow: 0px 6px 14px rgba(16, 185, 129, 0.25);
+  letter-spacing: 0.6px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  transition: all 0.3s ease;
+  display: inline-block;
+}
+
+.dashboard h2:hover {
+  box-shadow: 0px 8px 20px rgba(16, 185, 129, 0.35);
+  transform: translateY(-3px);
 }
 
 .usuario-actual {
-  background-color: #ffffffbb;
-  padding: 10px 20px;
-  border-radius: 8px;
+  background: linear-gradient(120deg, rgba(59, 130, 246, 0.15) 0%, rgba(96, 165, 250, 0.15) 100%);
+  backdrop-filter: blur(8px);
+  padding: 12px 24px;
+  border-radius: 10px;
   margin-bottom: 30px;
-  font-size: 14px;
-  color: #1c643a;
-  font-weight: bold;
+  font-size: 15px;
+  color: #ffffff;
+  font-weight: 600;
+  border: 1.5px solid rgba(59, 130, 246, 0.3);
+  letter-spacing: 0.3px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  display: inline-block;
 }
 
 .opciones {
@@ -199,63 +298,6 @@
   flex-wrap: wrap;
   justify-content: center;
 }
-
-
-.btn-ayuda {
-  margin-top: 20px;
-  display: flex;
-  gap: 100px;
-  flex-wrap: wrap;
-  justify-content: bottom;  
-  background-color: #2a985a;
-  color: white;
-  border: none;
-  padding: 15px 15px;
-  border-radius: 8px;
-  font-size: 15px;
-  font-weight: bold;
-  cursor: text;
-  transition: all 0.3s ease;
-  box-shadow: 0px 4px 8px rgba(0,0,0,0.2);
-  min-width: 25px;
-}
-
-.btn-ayuda:hover { 
-  transform: translateY(-3px);
-  box-shadow: 0px 6px 12px rgba(58, 54, 54, 0.3);
-  background: #57995b;
-}
-
-.btn-cancelar-ayuda {
-  background-color: #45643e;
-  color: white;
-  border: none;
-  padding: 10px 10px;
-  border-radius: 5px;
-  font-size: 10px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0px 4px 8px rgba(0,0,0,0.2);
-  min-width: 25px;
-}
-
-.panel-ayuda {
-  position: absolute;
-  top: 70px;
-  right: 20px;
-  background-color: white;
-  border-radius: 12px;
-  box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.3);
-  padding: 20px;
-  padding-top: 35px;
-  width: 400px;
-  max-height: 500px;
-  overflow-y: auto;
-  z-index: 999;
-  animation: slideDown 0.3s ease;
-}
-
 
 .btn-opcion {
   background-color: #018237;
