@@ -17,6 +17,11 @@ cd Inventario.Proyecto
 
 ### 2. Configurar base de datos MySQL
 
+Instalar laragon:
+link de descarga https://laragon.org/download
+
+Luego crear base da datos ejecutando lo siguiente en la consola:
+
 CREATE DATABASE inventario;
 USE inventario;
 CREATE TABLE usuarios (
@@ -24,58 +29,32 @@ id INT AUTO_INCREMENT PRIMARY KEY,
 usuario VARCHAR(50) NOT NULL UNIQUE,
 contrasena VARCHAR(255) NOT NULL
 );
+
 CREATE TABLE productos (
 id INT AUTO_INCREMENT PRIMARY KEY,
 nombre VARCHAR(100) NOT NULL,
-cantidad INT NOT NULL DEFAULT 0,
-precio DECIMAL(10,2) NOT NULL DEFAULT 0
+cantidad DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+precio INT DEFAULT NULL,
+granel TINYINT(1) DEFAULT 0,
+stock_minimo INT DEFAULT 5,
+descuento DECIMAL(5,2) DEFAULT 0.00
 );
 
-para agregar otras casillas en productos:
-ALTER TABLE productos
-ADD COLUMN cantidad DECIMAL(10,2) NOT NULL DEFAULT 0.00;
+CREATE TABLE ventas (
+id INT AUTO_INCREMENT PRIMARY KEY,
+transaccion_id VARCHAR(50),
+usuario_id INT NOT NULL,
+usuario_nombre VARCHAR(100) NOT NULL,
+producto_id INT NOT NULL,
+producto_nombre VARCHAR(250) NOT NULL AFTER,
+cantidad DECIMAL(10,2) NOT NULL DEFAULT 0,
+precio_unitario DECIMAL(10,2) NOT NULL DEFAULT 0,
+total DECIMAL(10,2) NOT NULL DEFAULT 0,
+fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-ALTER TABLE productos
-ADD COLUMN precio INT DEFAULT NULL;
+Para asignar las FOREIGN KEYS de la tabla ventas:
 
-ALTER TABLE productos
-ADD COLUMN granel TINYINT(1) DEFAULT 0;
-
-ALTER TABLE productos
-ADD COLUMN stock_minimo INT DEFAULT 5;
-
-ALTER TABLE productos
-ADD COLUMN descuento DECIMAL(5,2) DEFAULT 0.00;
-
-Lo que tiene que tener tabla usurarios:
-id, int, no null, primary key, default null, auto incrementar.
-usuario, varchar(100), yes null, unique key, default null.
-contrasena, varchar(225), null yes, default null.
-
-lo que tiene que tener la tabla productos:
-id, int, no null, primary key, default null, auto incremento.
-nombre, varchar(225), no null, unique key, default null.
-cantidad, decimal(10,2), no null, default 0.00
-precio, int, yes null, default null.
-granel, tinyint(1), yes null, default 0.
-stock_minimo, int, yes null, 5.
-descuento, decimal(5,2), null yes, default 0.00
-
-Crear tabla ventas solo con su id que es primary key, int, auto incrementa.
-luego ejecutar este codigo para las demas casillas
-
--- Agregar todas las columnas necesarias
-ALTER TABLE ventas
-ADD COLUMN usuario_id INT NOT NULL AFTER id,
-ADD COLUMN usuario_nombre VARCHAR(100) NOT NULL AFTER usuario_id,
-ADD COLUMN producto_id INT NOT NULL AFTER usuario_nombre,
-ADD COLUMN producto_nombre VARCHAR(250) NOT NULL AFTER producto_id,
-ADD COLUMN cantidad DECIMAL(10,2) NOT NULL DEFAULT 0 AFTER producto_nombre,
-ADD COLUMN precio_unitario DECIMAL(10,2) NOT NULL DEFAULT 0 AFTER cantidad,
-ADD COLUMN total DECIMAL(10,2) NOT NULL DEFAULT 0 AFTER precio_unitario,
-ADD COLUMN fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP AFTER total;
-
-para asignar las foreign keys:
 ALTER TABLE ventas
 ADD CONSTRAINT fk_venta_usuario
 FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
@@ -90,35 +69,46 @@ ON UPDATE CASCADE;
 
 ### 3. Instalar dependencias
 
-Frontend:
-cd client
-npm install
+Instalar vscode
 
-librerias a installar en client:
-react router dom (version 6)
-axios
+Crear carpeta proyecto y en ella dos carpetas; client y server.
+
+Frontend:
+1.- Ejecutar en una consola
+cd client (dirección de la carpeta client)
+
+2.- librerias a installar en consola de la carpeta client:
+npm install react router dom (version 6) axios
 
 Backend:
-cd server
-npm install
+2.- ejecutar en una nueva consola
+cd server (dirección carpeta server)
 
 librerias a instalar en server:
-express
-mysql2
-bcrypt
-cors
+npm install express mysql2 bcrypt cors
 
 ## Ejecutar proyecto
 
 Terminal 1 - Backend:
 cd server
+
+Ejecutar
 node index.js
+(levanta la conexión con el servidor)
 
 Terminal 2 - Frontend:
 cd client
+
+Ejecutar
 npm start
+(Inicia la app)
 
 ## Comandos Git
+
+Tienes que tener la invitación al git.
+Luego:
+
+Se ejecuta en la consola de la carpeta proyecto:
 
 Antes de trabajar(descarga los cambios hechos por los demas):
 git pull
@@ -132,6 +122,16 @@ git push
 ## Funcionalidades
 
 - Registro e inicio de sesion
-- Agregar productos
-- Autocompletado
-- Gestion de stock y precios
+- Agregar productos (productos por unidad y granel)
+- Gestion de stock y precios (se puede agregar descuentos o editar)
+- Vender producto (se venden productos a traves de la genstion de un carrito de compras, se puede
+  vender por unidad y tambien por granel)
+- Panel de datos (estadisticas generales, productos mas vendidos, historial de productos)
+
+## Funcionalidades a agregar en nuevas versiones
+
+- Añadir y vender a travéz de escaneo de codigos de barra vía celular o escaner USB.
+- Agregar la opcion de fiado o "venta interna" a través de una casilla extra en la tabla
+  de ventas.
+
+README.md actualizado 08-12-25
