@@ -4,17 +4,20 @@ import "./Vender.css";
 import Toast from './Toast';
 import ModalConfirmacion from './ModalConfirmacion';
 
+//funciones
 function Vender({ onCerrar, usuarioId, nombreUsuario }) {
-  const [productos, setProductos] = useState([]);
-  const [nombreProducto, setNombreProducto] = useState("");
-  const [cantidad, setCantidad] = useState("");
-  const [productosFiltrados, setProductosFiltrados] = useState([]);
-  const [mostrarSugerencias, setMostrarSugerencias] = useState(false);
-  const [productoSeleccionado, setProductoSeleccionado] = useState(null);
-  const [carrito, setCarrito] = useState([]);
-  const [toasts, setToasts] = useState([]);
-  const [modalConfirmacion, setModalConfirmacion] = useState(null);
+  const [productos, setProductos] = useState([]);//lista completa de los productos desde el backend
+  const [nombreProducto, setNombreProducto] = useState("");//nombre del producto a vender - sirve para input
+  const [cantidad, setCantidad] = useState("");//cantidad a vender
+  const [productosFiltrados, setProductosFiltrados] = useState([]);//productos coincidentes
+  const [mostrarSugerencias, setMostrarSugerencias] = useState(false);//controla si se muestra la sugerencia de productos coincidentes
+  const [productoSeleccionado, setProductoSeleccionado] = useState(null);///producto elegido para vender
+  const [carrito, setCarrito] = useState([]);//lista de productos añadidos antes de confirmar la venta
+  const [toasts, setToasts] = useState([]);//mensajes de notificación
+  const [modalConfirmacion, setModalConfirmacion] = useState(null);//mensaje de confirmación
 
+// Se ejecuta al iniciar el componente.
+// Carga todos los productos desde el servidor
   useEffect(() => {
     cargarProductos();
   }, []);
@@ -31,6 +34,7 @@ function Vender({ onCerrar, usuarioId, nombreUsuario }) {
       });
   };
 
+// Filtra los productos según lo que el usuario escribe, si el input esta vacio muestra todos los productos
   const filtrarProductos = (texto) => {
     setNombreProducto(texto);
     setProductoSeleccionado(null);
@@ -45,6 +49,7 @@ function Vender({ onCerrar, usuarioId, nombreUsuario }) {
     }
   };
 
+//selecciona el producto, agrega al carrito y realiza la venta
   const seleccionarProducto = (producto) => {
     setNombreProducto(producto.nombre);
     setMostrarSugerencias(false);

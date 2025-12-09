@@ -355,16 +355,18 @@ useEffect(() => {
       
       // Cargar estadísticas generales
       const respStats = await Axios.get(`http://localhost:3001/ventas/estadisticas?${params}`);
-      console.log("📊 Estadísticas recibidas:", respStats.data);
+      console.log("📊 Estadísticas recibidas del backend:", respStats.data);
       
       const statsLimpias = {
         total_ventas: parseInt(respStats.data.total_ventas) || 0,
+        ingreso_sindcto: parseFloat(respStats.data.ingreso_sindcto) || 0,
         ingresos_totales: parseFloat(respStats.data.ingresos_totales) || 0,
         unidades_granel: parseFloat(respStats.data.unidades_granel) || 0,
         unidades_normales: parseFloat(respStats.data.unidades_normales) || 0,
         venta_promedio: parseFloat(respStats.data.venta_promedio) || 0
-      };     
-
+      };
+      
+      console.log("📊 Estadísticas limpias para setState:", statsLimpias);
       setEstadisticas(statsLimpias);
       
       // Cargar productos más vendidos
@@ -384,6 +386,7 @@ useEffect(() => {
 
       setEstadisticas({
         total_ventas: 0,
+        ingreso_sindcto: 0,
         ingresos_totales: 0,
         unidades_granel: 0,
         unidades_normales: 0,
@@ -782,32 +785,46 @@ useEffect(() => {
                           <div className="estadistica-icono">📦</div>
                           <div className="estadistica-info">
                             <h4>Total Ventas</h4>
-                            <p className="estadistica-valor">{estadisticas.total_ventas}</p>
+                            <p className="estadistica-valor">{estadisticas.total_ventas || 0}</p>
                           </div>
                         </div>
                         
-                        <div className="estadistica-card">
-                          <div className="estadistica-icono">💰</div>
+                        <div className="estadistica-card ingresos-card">
                           <div className="estadistica-info">
-                            <h4>Ingresos Totales</h4>
-                            <p className="estadistica-valor">${estadisticas.ingresos_totales.toFixed(2)}</p>
+                            <h4>💰Ingresos</h4>
+                            <div className="ingresos-desglose">
+                              <div className="ingresos-item">
+                                <span className="ingresos-label">Ingreso Total - IVA</span>
+                                <span className="estadistica-valor">
+                                  ${(estadisticas.ingresos_totales || 0).toFixed(2)}
+                                </span>
+                              </div>
+                              <div className="ingresos-item">
+                                <span className="ingresos-label">Ingreso Total</span>
+                                <span className="estadistica-valor">
+                                  ${(estadisticas.ingreso_sindcto || 0).toFixed(2)}
+                                </span>
+                              </div>
+                            </div>
                           </div>
                         </div>
                         
-                        <div className="estadistica-card">
-                          <div className="estadistica-card unidades-card">
-                            <div className="estadistica-icono">📊</div>
-                            <div className="estadistica-info">
-                              <h4>Unidades Vendidas</h4>
-                              <div className="unidades-desglose">
-                                <div className="unidad-item">
-                                  <span className="unidad-label">🔢 Granel:</span>
-                                  <span className="unidad-valor">{estadisticas.unidades_granel.toFixed(2)} kg</span>
-                                </div>
-                                <div className="unidad-item">
-                                  <span className="unidad-label">📦 Unidad:</span>
-                                  <span className="unidad-valor">{estadisticas.unidades_normales.toFixed(0)}</span>
-                                </div>
+                        <div className="estadistica-card unidades-card">
+                          <div className="estadistica-icono">📊</div>
+                          <div className="estadistica-info">
+                            <h4>Unidades Vendidas</h4>
+                            <div className="unidades-desglose">
+                              <div className="unidad-item">
+                                <span className="unidad-label">🔢 Granel:</span>
+                                <span className="unidad-valor">
+                                  {(estadisticas.unidades_granel || 0).toFixed(2)} kg
+                                </span>
+                              </div>
+                              <div className="unidad-item">
+                                <span className="unidad-label">📦 Unidad:</span>
+                                <span className="unidad-valor">
+                                  {(estadisticas.unidades_normales || 0).toFixed(0)}
+                                </span>
                               </div>
                             </div>
                           </div>
@@ -817,7 +834,9 @@ useEffect(() => {
                           <div className="estadistica-icono">💵</div>
                           <div className="estadistica-info">
                             <h4>Venta Promedio</h4>
-                            <p className="estadistica-valor">${estadisticas.venta_promedio.toFixed(2)}</p>
+                            <p className="estadistica-valor">
+                              ${(estadisticas.venta_promedio || 0).toFixed(2)}
+                            </p>
                           </div>
                         </div>
                       </div>

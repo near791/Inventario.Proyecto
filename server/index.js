@@ -413,7 +413,8 @@ app.get("/ventas/estadisticas", (req, res) => {
     
     const estadisticas = {
       total_ventas: parseInt(result[0].total_ventas) || 0,
-      ingresos_totales: parseFloat(result[0].ingresos_totales) || 0,
+      ingreso_sindcto: parseFloat(result[0].ingresos_totales) || 0,
+      ingresos_totales: (parseFloat(result[0].ingresos_totales)- (parseFloat(result[0].ingresos_totales) * 0.19)) || 0,
       unidades_granel: parseFloat(result[0].unidades_granel) || 0,
       unidades_normales: parseFloat(result[0].unidades_normales) || 0,
       venta_promedio: parseFloat(result[0].venta_promedio) || 0

@@ -788,6 +788,31 @@
   font-weight: bold;
 }
 
+.ingresos-desglose {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+  width: 100%;
+}
+
+.ingresos-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.2);
+  padding: 8px 12px;
+  border-radius: 6px;
+  backdrop-filter: blur(10px);
+}
+
+.ingresos-label {
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0.95;
+}
+
 /* Secciones de Datos */
 .seccion-datos {
   background-color: #f8f9fa;
@@ -900,3 +925,4 @@
 .historial-scroll::-webkit-scrollbar-thumb:hover {
   background: #555;
 }
+
