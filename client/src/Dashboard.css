@@ -200,6 +200,63 @@
   justify-content: center;
 }
 
+
+.btn-ayuda {
+  margin-top: 20px;
+  display: flex;
+  gap: 100px;
+  flex-wrap: wrap;
+  justify-content: bottom;  
+  background-color: #2a985a;
+  color: white;
+  border: none;
+  padding: 15px 15px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: text;
+  transition: all 0.3s ease;
+  box-shadow: 0px 4px 8px rgba(0,0,0,0.2);
+  min-width: 25px;
+}
+
+.btn-ayuda:hover { 
+  transform: translateY(-3px);
+  box-shadow: 0px 6px 12px rgba(58, 54, 54, 0.3);
+  background: #57995b;
+}
+
+.btn-cancelar-ayuda {
+  background-color: #45643e;
+  color: white;
+  border: none;
+  padding: 10px 10px;
+  border-radius: 5px;
+  font-size: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0px 4px 8px rgba(0,0,0,0.2);
+  min-width: 25px;
+}
+
+.panel-ayuda {
+  position: absolute;
+  top: 70px;
+  right: 20px;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.3);
+  padding: 20px;
+  padding-top: 35px;
+  width: 400px;
+  max-height: 500px;
+  overflow-y: auto;
+  z-index: 999;
+  animation: slideDown 0.3s ease;
+}
+
+
 .btn-opcion {
   background-color: #018237;
   color: white;
