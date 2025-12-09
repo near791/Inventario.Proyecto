@@ -501,6 +501,7 @@
   position: relative;
 }
 
+/* Inventario*/
 .panel-inventario {
   background-color: white;
   padding: 30px;
@@ -574,7 +575,7 @@
   background-color: #c0392b;
 }
 
-/* Estilos para el Panel de Datos */
+/* panel de datos */
 .panel-datos {
   background-color: white;
   padding: 30px;
@@ -865,6 +866,15 @@
 .tabla-datos .fecha {
   color: #7f8c8d;
   font-size: 12px;
+}
+
+.tabla-datos .transaccion-id {
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  color: #3498db;
+  font-weight: 600;
+  max-width: 150px;
+  word-break: break-all;
 }
 
 /* Scroll para historial */

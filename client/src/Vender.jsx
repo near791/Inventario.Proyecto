@@ -128,23 +128,35 @@ function Vender({ onCerrar, usuarioId, nombreUsuario }) {
         productos: carrito
       });
 
+      // Mostrar mensaje con ID de transacción
+      const transaccionId = response.data.transaccion_id || "N/A";
+      
       if (response.data.productos_stock_bajo && response.data.productos_stock_bajo.length > 0) {
         const alertas = response.data.productos_stock_bajo
           .map(p => `${p.nombre}: ${p.cantidad_actual}/${p.stock_minimo}`)
           .join(", ");
         mostrarToast(`⚠️ Stock bajo en: ${alertas}`, "stock-bajo", 5000);
-      } else {
-        mostrarToast(
-          `✅ Venta realizada! Total: $${response.data.total_general.toFixed(2)}`,
-          "exito"
-        );
       }
+      
+      // Mensaje de éxito con número de transacción
+      mostrarToast(
+        `✅ Venta realizada! Total: $${response.data.total_general.toFixed(2)} | ID: ${transaccionId}`,
+        "exito",
+        4000
+      );
+
+      console.log("✅ Venta completada:", {
+        transaccion_id: transaccionId,
+        total: response.data.total_general,
+        productos: response.data.productos_vendidos
+      });
 
       setCarrito([]);
       setTimeout(() => {
         if (onCerrar) onCerrar();
-      }, 2000);
+      }, 3000);
     } catch (error) {
+      console.error("❌ Error en venta:", error);
       mostrarToast(
         error?.response?.data?.message || "Error al realizar la venta",
         "error"

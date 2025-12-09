@@ -190,7 +190,7 @@ app.post("/productos/agregar", (req, res) => {
   });
 });
 
-// VENDER PRODUCTOS CON CARRITO
+// VENDER PRODUCTOS CON CARRITO - CON TRANSACCION_ID
 app.post("/productos/vender", (req, res) => {
   const { usuario_id, productos } = req.body;
   
@@ -208,6 +208,10 @@ app.post("/productos/vender", (req, res) => {
   if (isNaN(usuarioIdNum)) {
     return res.status(400).json({ message: "ID de usuario inválido" });
   }
+
+  // ✨ GENERAR ID ÚNICO PARA ESTA TRANSACCIÓN
+  const transaccionId = `TXN-${Date.now()}-${usuarioIdNum}`;
+  console.log("🔖 ID de transacción generado:", transaccionId);
 
   // Obtener el nombre del usuario
   db.query("SELECT usuario FROM usuarios WHERE id = ?", [usuarioIdNum], (err, usuarioResult) => {
@@ -246,6 +250,7 @@ app.post("/productos/vender", (req, res) => {
             }
 
             console.log("✅ Venta múltiple registrada exitosamente:", {
+              transaccion_id: transaccionId,
               usuario: nombreUsuario,
               productos_vendidos: ventasRealizadas,
               total_general: totalVentaGeneral
@@ -253,6 +258,7 @@ app.post("/productos/vender", (req, res) => {
 
             res.json({ 
               message: "Venta realizada correctamente", 
+              transaccion_id: transaccionId,
               productos_vendidos: ventasRealizadas,
               total_general: totalVentaGeneral,
               productos_stock_bajo: productosConStockBajo
@@ -304,11 +310,11 @@ app.post("/productos/vender", (req, res) => {
                 });
               }
 
-              // Registrar la venta
+              // 🔖 Registrar la venta CON transaccion_id
               db.query(
-                `INSERT INTO ventas (usuario_id, usuario_nombre, producto_id, producto_nombre, cantidad, precio_unitario, total) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?)`,
-                [usuarioIdNum, nombreUsuario, producto_id, producto.nombre, cantidad, precio_unitario, subtotal],
+                `INSERT INTO ventas (transaccion_id, usuario_id, usuario_nombre, producto_id, producto_nombre, cantidad, precio_unitario, total) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                [transaccionId, usuarioIdNum, nombreUsuario, producto_id, producto.nombre, cantidad, precio_unitario, subtotal],
                 (err) => {
                   if (err) {
                     return db.rollback(() => {
@@ -328,6 +334,8 @@ app.post("/productos/vender", (req, res) => {
                       stock_minimo: producto.stock_minimo
                     });
                   }
+
+                  console.log(`✅ Producto ${index + 1}/${productos.length} procesado:`, producto.nombre);
 
                   // Procesar siguiente producto
                   procesarProducto(index + 1);
@@ -379,25 +387,31 @@ app.get("/ventas/usuario/:usuario_id", (req, res) => {
   );
 });
 
-// Obtener estadísticas de ventas CON FILTRO
+// Obtener estadísticas de ventas CON FILTRO - CORREGIDO
 app.get("/ventas/estadisticas", (req, res) => {
   const { mes, anio } = req.query;
   console.log("📈 Obteniendo estadísticas con filtros:", { mes, anio });
   
   let filtroFecha = "";
+  let filtroSubconsulta = "";
   const params = [];
+  const paramsSubconsulta = [];
   
   if (mes && anio) {
     filtroFecha = "WHERE MONTH(v.fecha) = ? AND YEAR(v.fecha) = ?";
+    filtroSubconsulta = "WHERE MONTH(fecha) = ? AND YEAR(fecha) = ?";
     params.push(parseInt(mes), parseInt(anio));
+    paramsSubconsulta.push(parseInt(mes), parseInt(anio));
   } else if (anio) {
     filtroFecha = "WHERE YEAR(v.fecha) = ?";
+    filtroSubconsulta = "WHERE YEAR(fecha) = ?";
     params.push(parseInt(anio));
+    paramsSubconsulta.push(parseInt(anio));
   }
   
   const query = `
     SELECT 
-      COUNT(*) as total_ventas,
+      COUNT(DISTINCT v.transaccion_id) as total_ventas,
       COALESCE(SUM(v.total), 0) as ingresos_totales,
       COALESCE(SUM(CASE 
         WHEN p.granel = 1 THEN v.cantidad 
@@ -407,16 +421,25 @@ app.get("/ventas/estadisticas", (req, res) => {
         WHEN p.granel = 0 OR p.granel IS NULL THEN v.cantidad 
         ELSE 0 
       END), 0) as unidades_normales,
-      COALESCE(AVG(v.total), 0) as venta_promedio
+      COALESCE(AVG(venta_total.total_por_transaccion), 0) as venta_promedio
     FROM ventas v
     INNER JOIN productos p ON v.producto_id = p.id
+    LEFT JOIN (
+      SELECT transaccion_id, SUM(total) as total_por_transaccion
+      FROM ventas
+      ${filtroSubconsulta}
+      GROUP BY transaccion_id
+    ) venta_total ON v.transaccion_id = venta_total.transaccion_id
     ${filtroFecha}
   `;
   
-  console.log("📊 Query SQL:", query);
-  console.log("📊 Params:", params);
+  // Combinar parámetros: primero los de la subconsulta, luego los de la consulta principal
+  const todosLosParams = [...paramsSubconsulta, ...params];
   
-  db.query(query, params, (err, result) => {
+  console.log("📊 Query SQL:", query);
+  console.log("📊 Params:", todosLosParams);
+  
+  db.query(query, todosLosParams, (err, result) => {
     if (err) {
       console.error("❌ Error al obtener estadísticas:", err);
       return res.status(500).json({ message: "Error al obtener estadísticas" });
@@ -478,7 +501,7 @@ app.get("/ventas/productos-mas-vendidos", (req, res) => {
   });
 });
 
-// Obtener historial de ventas CON FILTRO
+// Obtener historial de ventas CON FILTRO - CON TRANSACCION_ID
 app.get("/ventas/historial", (req, res) => {
   const { mes, anio, limite = 50 } = req.query;
   console.log("📋 Obteniendo historial con filtros:", { mes, anio, limite });
@@ -499,6 +522,7 @@ app.get("/ventas/historial", (req, res) => {
   const query = `
     SELECT 
       id,
+      transaccion_id,
       usuario_id,
       usuario_nombre,
       producto_id,
@@ -513,6 +537,9 @@ app.get("/ventas/historial", (req, res) => {
     ORDER BY fecha DESC
     LIMIT ?
   `;
+  
+  console.log("📊 Query historial:", query);
+  console.log("📊 Params:", params);
   
   db.query(query, params, (err, result) => {
     if (err) {

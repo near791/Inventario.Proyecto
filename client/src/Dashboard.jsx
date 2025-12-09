@@ -872,6 +872,7 @@ useEffect(() => {
                                 <th>Cantidad</th>
                                 <th>Precio Unit.</th>
                                 <th>Total</th>
+                                <th>N° Transacción</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -883,6 +884,7 @@ useEffect(() => {
                                   <td>{parseFloat(v.cantidad).toFixed(2)}</td>
                                   <td>${parseFloat(v.precio_unitario).toFixed(2)}</td>
                                   <td className="total-venta">${parseFloat(v.total).toFixed(2)}</td>
+                                  <td>{v.transaccion_id}</td>
                                 </tr>
                               ))}
                             </tbody>
