@@ -9,6 +9,7 @@ function Dashboard() {
   const [mostrarPanel, setMostrarPanel] = useState(false);
   const [mostrarInventario, setMostrarInventario] = useState(false);
   const [mostrarNotificaciones, setMostrarNotificaciones] = useState(false);
+  const [mostrarAyuda, setMostrarAyuda] = useState(false);
   const [mostrarVenta, setMostrarVenta] = useState(false);
   const [productos, setProductos] = useState([]);
   const [nombreProducto, setNombreProducto] = useState("");
@@ -213,6 +214,12 @@ useEffect(() => {
       });
   };
 
+
+  const abrirAyuda = () => {
+    console.log("🆘 Abriendo ayuda general");
+    setMostrarAyuda(true);
+  }
+  
   const abrirVenta = () => {
     console.log("💸 Abriendo panel de venta completo");
     setMostrarVenta(true);
@@ -483,6 +490,75 @@ useEffect(() => {
         </button>
         <button className="btn-opcion" onClick={abrirDatos}>Datos 📊</button>
       </div>
+
+      
+      {/* AYUDA BOTOOOOOOOOON */}
+      <div className="Ayuda-opciones" slot="Start">
+        <button className="btn-ayuda" onClick={abrirAyuda}>
+          🆘 Ayuda general 
+        </button>
+      </div>
+
+
+      {/* Panel de Ayuda */}
+      {mostrarAyuda && (
+        <div className="panel-ayuda">
+          <div> 
+          <p> Bienvenido al Gestor de Inventario Tienda Goyito!😊 </p> 
+          <p> Como podrás ver, aquí se puede "Agregar producto", "Ver Inventario", "Vender productos" y "Ver Datos". </p>
+
+          <p> Para empezar, agregaremos un nuevo producto, notarás que al hacer click en el botón de "Agregar producto" se Abre
+              una nueva ventana, en está verás que existe la primera casilla con título "Nombre de Producto", aquí podras ingresar
+              el nombre de tu primer producto a vender. </p>
+
+          <p> En la casilla "Cantidad a agregar", ingresaremos en unidades la cantidad de productos que compraremos para nuestro establecimiento.
+              Justo debajo de esto, vemos que existe un cuadro para seleccionar "¿Es producto a granel?". Daremos click al cuadro
+              siempre que el tipo de producto que estamos ingresando se venda según la cantidad de kilogramos que lleve el cliente.
+              Ahora bien, podemos observar que la última casilla a completar se titula "Precio por unidad",
+              en esta casilla ingresaremos el precio exacto al que venderemos el producto,
+              incluyendo el IVA, todo esto en pesos chilenos.
+              Finalmente, al haber ingresado y rellenado cada una de esas casillas, daremos click al botón verde "Agregar". ¡Y listo! Haz agregado
+              productos al inventario de la tienda. Aparecerá una notificacion sobre la compra realizada. </p>
+
+          <p> A continuación, para ver el inventario actual de la tienda, haz click sobre el botón de "Ver Inventario", abriendo una ventana
+              con un listado de los productos en stock, aquellos bienes que se encuentren agotados serán resaltados en rojo, indicando una alerta
+              de inventario. Además,al extremo derecho de la tabla se encuentran dos botones por producto, con el botón rojo 🗑️ podrás eliminar
+              los productos que ya no serán vendidos en la tienda. Mientras que, con el botón azul ✏️, podrás agregar promociones en tus productos.
+          </p>
+          <p> Para agregar una promoción, al seleccionar el botón ✏️ se abrirá una ventana con algunas casillas autocompletadas con los datos del producto.
+              Podemos modificar la información de nuestros bienes a gusto. En la última casilla "Descuento (%)" es importante ingresar el porcentaje a descontrar
+              a nuestro producto, siempre considerando que esta promoción se aplicará a cada unidad por separado, o bien,
+              a cada kilogramo de producto, según corresponda. 
+          </p>
+          <p> Al momento de atender a un cliente, tendremos que ingresar los productos que quiera comprar en su "carrito de compras". Para esto, haremos click
+              en el botón "Vender productos". A continuación se presenta una ventana con dos casillas. En la primera, "Producto", ingresaremos el nombre de el tipo de
+              producto que se está vendiendo, y en la casilla "Cantidad" completaremos con el número de unidades, o bien, kilogramos. Finalmente, una vez seguro de que
+              la información ingresada es correcta, seleccionamos el botón "+ Agregar al Carrito". En caso de que la información no corresponda, podemos hacer click
+              en el botón rojo 🗑️ para eliminar este ingreso erróneo, y reemplazarlo con uno nuevo y correcto.
+              Una vez ingresados todos los productos de la compra, podemos finalizar la venta haciendo click en "Realizar Venta". Los datos de esta acción se registrarán
+              de forma automática en la sección de "Ver Datos".
+          </p>
+          <p> La sección de "Ver Datos" nos ofrece información sobre la tienda Goyito, podemos filtrar esta información por año y mes, saber la cantidad de
+              ventas totales que ha tenido la tienda, los ingresos, unidades vendidas a granel y por unidades, así como el promedio de dinero obtenido en ventas. Más abajo,
+              se puede observar una tabla que nos indica los productos más vendidos y que, por tanto, son de mayor interés para nuestro inventario. A su vez, al deslizar
+              hasta el final de la ventana, se observa una tabla con el detalle del historial de ventas realizadas, según fecha, hora, vendedor, los productos vendidos,
+              cantidad, precio individual y total de cada venta. </p>
+
+          <p> Finalmente, el panel de notificaciones nos brindará alertas sobre productos agotados y promociones activas.
+          </p>
+          <p> Para mayor información diríjase con un miembro certificado de Goyito S.A. Gracias por preferir trabajar con nosotros.</p>
+          
+          </div>
+          <button 
+            className="btn-cancelar-ayuda" 
+            onClick={() => setMostrarAyuda(false)}
+            title="Cerrar ayuda"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
 
       {/* Panel Agregar Productos */}
       {mostrarPanel && (
