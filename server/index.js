@@ -7,6 +7,7 @@ const saltRounds = 10;
 app.use(cors());
 app.use(express.json());
 
+//crea la conexion del backend con la base de datos desde Node.js a traves de la libreria Mysql2
 const mysql = require("mysql2");
 const db = mysql.createConnection({
     host: "localhost",
@@ -16,6 +17,7 @@ const db = mysql.createConnection({
     port: 3306,
 });
 
+//Al momento de levantar el server muestra si se logra o falla
 db.connect((err) => {
   if (err) {
     console.log("❌ Error de conexión a MySQL:", err);
@@ -190,7 +192,7 @@ app.post("/productos/agregar", (req, res) => {
   });
 });
 
-// VENDER PRODUCTOS CON CARRITO - CON TRANSACCION_ID
+// Vender productos a través de la gestion de un carrito de ventas
 app.post("/productos/vender", (req, res) => {
   const { usuario_id, productos } = req.body;
   
@@ -209,7 +211,7 @@ app.post("/productos/vender", (req, res) => {
     return res.status(400).json({ message: "ID de usuario inválido" });
   }
 
-  // ✨ GENERAR ID ÚNICO PARA ESTA TRANSACCIÓN
+  // Genera una id unica para cada transaccion
   const transaccionId = `TXN-${Date.now()}-${usuarioIdNum}`;
   console.log("🔖 ID de transacción generado:", transaccionId);
 
@@ -310,7 +312,7 @@ app.post("/productos/vender", (req, res) => {
                 });
               }
 
-              // 🔖 Registrar la venta CON transaccion_id
+              // Registrar la venta CON transaccion_id
               db.query(
                 `INSERT INTO ventas (transaccion_id, usuario_id, usuario_nombre, producto_id, producto_nombre, cantidad, precio_unitario, total) 
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -352,42 +354,7 @@ app.post("/productos/vender", (req, res) => {
   });
 });
 
-// Obtener historial de ventas
-app.get("/ventas", (req, res) => {
-  console.log("📊 Obteniendo historial de ventas...");
-  db.query(
-    "SELECT *, DATE_FORMAT(fecha, '%d/%m/%Y %H:%i:%s') as fecha_formateada FROM ventas ORDER BY fecha DESC",
-    (err, result) => {
-      if (err) {
-        console.error("❌ Error al obtener ventas:", err);
-        return res.status(500).json({ message: "Error al obtener el historial de ventas" });
-      }
-      console.log("✅ Ventas obtenidas:", result.length);
-      res.json(result);
-    }
-  );
-});
-
-// Obtener ventas por usuario
-app.get("/ventas/usuario/:usuario_id", (req, res) => {
-  const { usuario_id } = req.params;
-  console.log("📊 Obteniendo ventas del usuario:", usuario_id);
-  
-  db.query(
-    "SELECT * FROM ventas WHERE usuario_id = ? ORDER BY fecha DESC",
-    [usuario_id],
-    (err, result) => {
-      if (err) {
-        console.error("❌ Error al obtener ventas:", err);
-        return res.status(500).json({ message: "Error al obtener las ventas" });
-      }
-      console.log("✅ Ventas del usuario obtenidas:", result.length);
-      res.json(result);
-    }
-  );
-});
-
-// Obtener estadísticas de ventas CON FILTRO - CORREGIDO
+// Obtener estadísticas de ventas con filtro por mes/año
 app.get("/ventas/estadisticas", (req, res) => {
   const { mes, anio } = req.query;
   console.log("📈 Obteniendo estadísticas con filtros:", { mes, anio });
@@ -433,7 +400,6 @@ app.get("/ventas/estadisticas", (req, res) => {
     ${filtroFecha}
   `;
   
-  // Combinar parámetros: primero los de la subconsulta, luego los de la consulta principal
   const todosLosParams = [...paramsSubconsulta, ...params];
   
   console.log("📊 Query SQL:", query);
@@ -501,7 +467,7 @@ app.get("/ventas/productos-mas-vendidos", (req, res) => {
   });
 });
 
-// Obtener historial de ventas CON FILTRO - CON TRANSACCION_ID
+// Obtener historial de ventas con limite de 50
 app.get("/ventas/historial", (req, res) => {
   const { mes, anio, limite = 50 } = req.query;
   console.log("📋 Obteniendo historial con filtros:", { mes, anio, limite });
@@ -570,68 +536,6 @@ app.get("/ventas/anios-disponibles", (req, res) => {
     const anios = result.map(r => r.anio);
     console.log("✅ Años disponibles:", anios);
     res.json(anios);
-  });
-});
-
-// Ventas por usuario CON FILTRO
-app.get("/ventas/por-usuario", (req, res) => {
-  const { mes, anio } = req.query;
-  console.log("👥 Obteniendo ventas por usuario con filtros:", { mes, anio });
-  
-  let filtroFecha = "";
-  const params = [];
-  
-  if (mes && anio) {
-    filtroFecha = "WHERE MONTH(fecha) = ? AND YEAR(fecha) = ?";
-    params.push(parseInt(mes), parseInt(anio));
-  } else if (anio) {
-    filtroFecha = "WHERE YEAR(fecha) = ?";
-    params.push(parseInt(anio));
-  }
-  
-  const query = `
-    SELECT 
-      usuario_id,
-      usuario_nombre,
-      COUNT(*) as total_ventas,
-      SUM(total) as ingresos_generados,
-      SUM(cantidad) as unidades_vendidas
-    FROM ventas
-    ${filtroFecha}
-    GROUP BY usuario_id, usuario_nombre
-    ORDER BY ingresos_generados DESC
-  `;
-  
-  db.query(query, params, (err, result) => {
-    if (err) {
-      console.error("❌ Error en ventas por usuario:", err);
-      return res.status(500).json({ message: "Error al obtener ventas por usuario" });
-    }
-    console.log("✅ Ventas por usuario obtenidas:", result.length);
-    res.json(result);
-  });
-});
-
-// Ventas del día
-app.get("/ventas/hoy", (req, res) => {
-  console.log("📅 Obteniendo ventas del día...");
-  
-  const query = `
-    SELECT 
-      COUNT(*) as total_ventas,
-      COALESCE(SUM(total), 0) as ingresos_hoy,
-      COALESCE(SUM(cantidad), 0) as unidades_vendidas
-    FROM ventas
-    WHERE DATE(fecha) = CURDATE()
-  `;
-  
-  db.query(query, (err, result) => {
-    if (err) {
-      console.error("❌ Error en ventas del día:", err);
-      return res.status(500).json({ message: "Error al obtener ventas del día" });
-    }
-    console.log("✅ Ventas del día obtenidas:", result[0]);
-    res.json(result[0]);
   });
 });
 
@@ -732,6 +636,7 @@ app.delete("/productos/:id", (req, res) => {
   });
 });
 
+//verifica que este funcionando el backend y las url de express
 app.listen(3001, () => {
   console.log("🚀 Servidor corriendo en el puerto 3001");
   console.log("📌 Rutas disponibles:");
