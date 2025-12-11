@@ -9,8 +9,8 @@ function Dashboard() {
   const [mostrarPanel, setMostrarPanel] = useState(false);
   const [mostrarInventario, setMostrarInventario] = useState(false);
   const [mostrarNotificaciones, setMostrarNotificaciones] = useState(false);
-  const [mostrarAyuda, setMostrarAyuda] = useState(false);
   const [mostrarVenta, setMostrarVenta] = useState(false);
+  const [mostrarAyuda, setMostrarAyuda] = useState(false);
   const [productos, setProductos] = useState([]);
   const [nombreProducto, setNombreProducto] = useState("");
   const [cantidad, setCantidad] = useState("");
@@ -219,7 +219,7 @@ useEffect(() => {
     console.log("🆘 Abriendo ayuda general");
     setMostrarAyuda(true);
   }
-  
+
   const abrirVenta = () => {
     console.log("💸 Abriendo panel de venta completo");
     setMostrarVenta(true);
@@ -362,18 +362,16 @@ useEffect(() => {
       
       // Cargar estadísticas generales
       const respStats = await Axios.get(`http://localhost:3001/ventas/estadisticas?${params}`);
-      console.log("📊 Estadísticas recibidas del backend:", respStats.data);
+      console.log("📊 Estadísticas recibidas:", respStats.data);
       
       const statsLimpias = {
         total_ventas: parseInt(respStats.data.total_ventas) || 0,
-        ingreso_sindcto: parseFloat(respStats.data.ingreso_sindcto) || 0,
         ingresos_totales: parseFloat(respStats.data.ingresos_totales) || 0,
         unidades_granel: parseFloat(respStats.data.unidades_granel) || 0,
         unidades_normales: parseFloat(respStats.data.unidades_normales) || 0,
         venta_promedio: parseFloat(respStats.data.venta_promedio) || 0
-      };
-      
-      console.log("📊 Estadísticas limpias para setState:", statsLimpias);
+      };     
+
       setEstadisticas(statsLimpias);
       
       // Cargar productos más vendidos
@@ -393,7 +391,6 @@ useEffect(() => {
 
       setEstadisticas({
         total_ventas: 0,
-        ingreso_sindcto: 0,
         ingresos_totales: 0,
         unidades_granel: 0,
         unidades_normales: 0,
@@ -475,7 +472,9 @@ useEffect(() => {
         </div>
       )}
 
-      <h2>InfoStock</h2>
+    <div className="dashboard-header">
+      <h2>Gestor de Inventario Minimarket "Goyito"</h2>
+    </div>
       {nombreUsuario && <p className="usuario-actual">👤 Usuario: {nombreUsuario}</p>}
       
       <div className="opciones">
@@ -488,10 +487,11 @@ useEffect(() => {
         <button className="btn-opcion" onClick={abrirVenta}>
           Vender Productos 💸
         </button>
-        <button className="btn-opcion" onClick={abrirDatos}>Datos 📊</button>
+        <button className="btn-opcion" onClick={abrirDatos}>
+          Ver Datos 📊
+        </button>
       </div>
 
-      
       {/* AYUDA BOTOOOOOOOOON */}
       <div className="Ayuda-opciones" slot="Start">
         <button className="btn-ayuda" onClick={abrirAyuda}>
@@ -502,17 +502,8 @@ useEffect(() => {
 
       {/* Panel de Ayuda */}
       {mostrarAyuda && (
-      <div className="ayuda-overlay">
         <div className="panel-ayuda">
-          
-          <button 
-            className="btn-cerrar-ayuda"
-            onClick={() => setMostrarAyuda(false)}
-          >
-            ✕
-          </button>
-
-          <div>
+          <div> 
           <p> Bienvenido al Gestor de Inventario Tienda Goyito!😊 </p> 
           <p> Como podrás ver, aquí se puede "Agregar producto", "Ver Inventario", "Vender productos" y "Ver Datos". </p>
 
@@ -556,11 +547,24 @@ useEffect(() => {
           <p> Finalmente, el panel de notificaciones nos brindará alertas sobre productos agotados y promociones activas.
           </p>
           <p> Para mayor información diríjase con un miembro certificado de Goyito S.A. Gracias por preferir trabajar con nosotros.</p>
+          
           </div>
+          <button 
+            className="btn-cerrar-ayuda" 
+            onClick={() => setMostrarAyuda(false)}
+            title="Cerrar ayuda"
+          >
+            ✕
+          </button>
+          <button 
+            className="btn-cerrar-ayuda2" 
+            onClick={() => setMostrarAyuda(false)}
+            title="Cerrar ayuda"
+          >
+            ✕
+          </button>
         </div>
-      </div>
       )}
-
 
       {/* Panel Agregar Productos */}
       {mostrarPanel && (
@@ -620,12 +624,12 @@ useEffect(() => {
                   ¿Es producto a granel? (se mide en kg)
                 </label>
 
-                <label>Precio por {granel ? 'kg' : 'unidad'}:</label>
+                <label>Precio (CLP) por {granel ? 'kg' : 'unidad'}:</label>
                 <input
                   type="number"
                   value={precio}
                   onChange={(e) => setPrecio(e.target.value)}
-                  placeholder="Ingresa el precio"
+                  placeholder="Ingresa el precio en pesos CLP"
                   min="0"
                   step="0.01"
                 />
@@ -808,10 +812,15 @@ useEffect(() => {
               onCancelar={modalConfirmacion.onCancelar}
             />
           )}
+          
           {/* Panel de Datos */}
           {mostrarDatos && (
             <div className="panel-overlay" onClick={() => setMostrarDatos(false)}>
               <div className="panel-datos" onClick={(e) => e.stopPropagation()}>
+                <button className="btn-cancelar2" onClick={() => setMostrarDatos(false)}>
+                Cerrar
+                </button>
+                
                 <h3>📊 Panel de Datos y Estadísticas</h3>
                 
                 {/* Filtros */}
@@ -863,46 +872,32 @@ useEffect(() => {
                           <div className="estadistica-icono">📦</div>
                           <div className="estadistica-info">
                             <h4>Total Ventas</h4>
-                            <p className="estadistica-valor">{estadisticas.total_ventas || 0}</p>
+                            <p className="estadistica-valor">{estadisticas.total_ventas}</p>
                           </div>
                         </div>
                         
-                        <div className="estadistica-card ingresos-card">
+                        <div className="estadistica-card">
+                          <div className="estadistica-icono">💰</div>
                           <div className="estadistica-info">
-                            <h4>💰Ingresos</h4>
-                            <div className="ingresos-desglose">
-                              <div className="ingresos-item">
-                                <span className="ingresos-label">Ingreso Total - IVA</span>
-                                <span className="estadistica-valor">
-                                  ${(estadisticas.ingresos_totales || 0).toFixed(2)}
-                                </span>
-                              </div>
-                              <div className="ingresos-item">
-                                <span className="ingresos-label">Ingreso Total</span>
-                                <span className="estadistica-valor">
-                                  ${(estadisticas.ingreso_sindcto || 0).toFixed(2)}
-                                </span>
-                              </div>
-                            </div>
+                            <h4>Ingresos Totales</h4>
+                            <p className="estadistica-valor">${estadisticas.ingresos_totales.toFixed(2)}</p>
                           </div>
                         </div>
                         
-                        <div className="estadistica-card unidades-card">
-                          <div className="estadistica-icono">📊</div>
-                          <div className="estadistica-info">
-                            <h4>Unidades Vendidas</h4>
-                            <div className="unidades-desglose">
-                              <div className="unidad-item">
-                                <span className="unidad-label">🔢 Granel:</span>
-                                <span className="unidad-valor">
-                                  {(estadisticas.unidades_granel || 0).toFixed(2)} kg
-                                </span>
-                              </div>
-                              <div className="unidad-item">
-                                <span className="unidad-label">📦 Unidad:</span>
-                                <span className="unidad-valor">
-                                  {(estadisticas.unidades_normales || 0).toFixed(0)}
-                                </span>
+                        <div className="estadistica-card">
+                          <div className="estadistica-card unidades-card">
+                            <div className="estadistica-icono">📊</div>
+                            <div className="estadistica-info">
+                              <h4>Unidades Vendidas</h4>
+                              <div className="unidades-desglose">
+                                <div className="unidad-item">
+                                  <span className="unidad-label">🔢 Granel:</span>
+                                  <span className="unidad-valor">{estadisticas.unidades_granel.toFixed(2)} kg</span>
+                                </div>
+                                <div className="unidad-item">
+                                  <span className="unidad-label">📦 Unidad:</span>
+                                  <span className="unidad-valor">{estadisticas.unidades_normales.toFixed(0)}</span>
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -912,9 +907,7 @@ useEffect(() => {
                           <div className="estadistica-icono">💵</div>
                           <div className="estadistica-info">
                             <h4>Venta Promedio</h4>
-                            <p className="estadistica-valor">
-                              ${(estadisticas.venta_promedio || 0).toFixed(2)}
-                            </p>
+                            <p className="estadistica-valor">${estadisticas.venta_promedio.toFixed(2)}</p>
                           </div>
                         </div>
                       </div>
@@ -992,9 +985,6 @@ useEffect(() => {
                   </>
                 )}
 
-                <button className="btn-cancelar" onClick={() => setMostrarDatos(false)}>
-                  Cerrar
-                </button>
               </div>
             </div>
           )}
