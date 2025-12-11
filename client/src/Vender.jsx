@@ -15,6 +15,7 @@ function Vender({ onCerrar, usuarioId, nombreUsuario }) {
   const [carrito, setCarrito] = useState([]);//lista de productos añadidos antes de confirmar la venta
   const [toasts, setToasts] = useState([]);//mensajes de notificación
   const [modalConfirmacion, setModalConfirmacion] = useState(null);//mensaje de confirmación
+  const [Fiado, setFiado] = useState(false);
 
 // Se ejecuta al iniciar el componente.
 // Carga todos los productos desde el servidor
@@ -303,6 +304,16 @@ function Vender({ onCerrar, usuarioId, nombreUsuario }) {
           step={productoSeleccionado?.granel ? "0.01" : "1"}
           disabled={!productoSeleccionado}
         />
+
+        <label style={{ display: 'flex', alignItems: 'center', marginTop: '15px', cursor: 'pointer' }}>
+        <input
+        type="checkbox"
+        checked={Fiado}
+        onChange={(e) => setFiado(e.target.checked)}
+        style={{ marginRight: '8px', width: 'auto', cursor: 'pointer' }}
+        />
+        ¿El producto es para Fiar?
+        </label>
 
                 <button
           className="btn-agregar-carrito"
