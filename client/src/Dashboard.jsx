@@ -963,6 +963,7 @@ useEffect(() => {
                                 <th>Precio Unit.</th>
                                 <th>Total</th>
                                 <th>N° Transacción</th>
+                                <th>Estado </th>
                               </tr>
                             </thead>
                             <tbody>
@@ -975,9 +976,17 @@ useEffect(() => {
                                   <td>${parseFloat(v.precio_unitario).toFixed(2)}</td>
                                   <td className="total-venta">${parseFloat(v.total).toFixed(2)}</td>
                                   <td>{v.transaccion_id}</td>
+                                  <td>{v.fiado ? (
+                                    <span className="badge-fiado">💳 FIADO TIENDA</span>
+                                    ) : (
+                                    <span className="badge-pagado">✅ PAGADO CLIENTES</span>
+                                    )}</td>
                                 </tr>
                               ))}
                             </tbody>
+
+
+                            
                           </table>
                         </div>
                       )}

@@ -96,16 +96,19 @@ function Vender({ onCerrar, usuarioId, nombreUsuario }) {
       precio_unitario: precioConDescuento,
       subtotal: precioConDescuento * cantidadNum,
       granel: productoSeleccionado.granel,
-      descuento: productoSeleccionado.descuento
+      descuento: productoSeleccionado.descuento,
+      fiado: Fiado
     };
 
     setCarrito([...carrito, nuevoItem]);
     setNombreProducto("");
     setCantidad("");
     setProductoSeleccionado(null);
+    setFiado(false);
     mostrarToast("Producto agregado al carrito", "exito");
   };
 
+  
   const eliminarDelCarrito = (index) => {
     const nuevoCarrito = carrito.filter((_, i) => i !== index);
     setCarrito(nuevoCarrito);
@@ -131,7 +134,8 @@ function Vender({ onCerrar, usuarioId, nombreUsuario }) {
     try {
       const response = await Axios.post("http://localhost:3001/productos/vender", {
         usuario_id: usuarioId,
-        productos: carrito
+        productos: carrito,
+      
       });
 
       // Mostrar mensaje con ID de transacción
@@ -154,7 +158,8 @@ function Vender({ onCerrar, usuarioId, nombreUsuario }) {
       console.log("✅ Venta completada:", {
         transaccion_id: transaccionId,
         total: response.data.total_general,
-        productos: response.data.productos_vendidos
+        productos: response.data.productos_vendidos,
+        fiado: response.data.total_ventas_fiadas
       });
 
       setCarrito([]);
@@ -306,16 +311,16 @@ function Vender({ onCerrar, usuarioId, nombreUsuario }) {
         />
 
         <label style={{ display: 'flex', alignItems: 'center', marginTop: '15px', cursor: 'pointer' }}>
-        <input
-        type="checkbox"
-        checked={Fiado}
-        onChange={(e) => setFiado(e.target.checked)}
-        style={{ marginRight: '8px', width: 'auto', cursor: 'pointer' }}
-        />
-        ¿El producto es para Fiar?
+          <input
+            type="checkbox"
+            checked={Fiado}
+            onChange={(e) => setFiado(e.target.checked)}
+            style={{ marginRight: '8px', width: 'auto', cursor: 'pointer' }}
+          />
+          ¿Es venta de producto fiado?
         </label>
 
-                <button
+        <button
           className="btn-agregar-carrito"
           onClick={agregarAlCarrito}
           disabled={!productoSeleccionado || !cantidad}
@@ -348,6 +353,19 @@ function Vender({ onCerrar, usuarioId, nombreUsuario }) {
                 <div key={index} className="carrito-item">
                   <div className="carrito-item-info">
                     <div className="carrito-item-nombre">{item.nombre}</div>
+                     {item.fiado && (
+                        <span className="badge-fiado" style={{
+                          marginLeft: '8px',
+                          background: '#f39c12',
+                          color: 'white',
+                          padding: '2px 8px',
+                          borderRadius: '12px',
+                          fontSize: '11px',
+                          fontWeight: 'bold'
+                        }}>
+                          FIADO
+                        </span>
+                      )}
                     <div className="carrito-item-detalles">
                       {item.cantidad} {item.granel ? "kg" : "unid"} × ${item.precio_unitario.toFixed(2)}
                       {item.descuento > 0 && (
