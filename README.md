@@ -67,6 +67,23 @@ FOREIGN KEY (producto_id) REFERENCES productos(id)
 ON DELETE CASCADE
 ON UPDATE CASCADE;
 
+## Agregar la caducidad a los productos
+
+ALTER TABLE productos
+ADD COLUMN dias_caducidad INT DEFAULT 30,
+ADD COLUMN fecha_ultima_actualizacion DATE;
+
+## luego
+
+UPDATE productos
+SET dias_caducidad = 30,
+fecha_ultima_actualizacion = CURDATE()
+WHERE dias_caducidad IS NULL;
+
+## agregar el fiado
+
+ALTER TABLE ventas ADD COLUMN Fiado VARCHAR(50) NOT NULL DEFAULT 'Pagado';
+
 ### 3. Instalar dependencias
 
 Instalar vscode

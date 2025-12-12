@@ -625,13 +625,6 @@ const cargarAlertasCaducidad = () => {
           >
             ✕
           </button>
-          <button 
-            className="btn-cerrar-ayuda2" 
-            onClick={() => setMostrarAyuda(false)}
-            title="Cerrar ayuda"
-          >
-            ✕
-          </button>
         </div>
       )}
 
