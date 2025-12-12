@@ -277,7 +277,7 @@ app.post("/productos/vender", (req, res) => {
           cantidad,
           precio_unitario,
           subtotal,
-          fiado: fiado || false 
+          Fiado: Fiado ? 1 : 0
         });
 
         // Verificar producto y stock
@@ -320,6 +320,8 @@ app.post("/productos/vender", (req, res) => {
                 });
               }
 
+              const esFiado = Fiado ? 1 : 0;
+
               // Registrar la venta CON transaccion_id
               db.query(
                 `INSERT INTO ventas (
@@ -331,10 +333,10 @@ app.post("/productos/vender", (req, res) => {
                 cantidad, 
                 precio_unitario, 
                 total, 
-                fiado
+                Fiado
                 ) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-                [transaccionId, usuarioIdNum, nombreUsuario, producto_id, producto.nombre, cantidad, precio_unitario, subtotal, fiado|| false],
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [transaccionId, usuarioIdNum, nombreUsuario, producto_id, producto.nombre, cantidad, precio_unitario, subtotal, esFiado ? 1 : 0],
                 (err) => {
                   if (err) {
                     return db.rollback(() => {
@@ -351,7 +353,7 @@ app.post("/productos/vender", (req, res) => {
                     productosConStockBajo.push({
                       nombre: producto.nombre,
                       cantidad_actual: nuevaCantidad,
-                      stock_minimo: producto.stock_minimo
+                      stock_minimo: producto.stock_minimo,
                     });
                   }
 
@@ -514,7 +516,7 @@ app.get("/ventas/historial", (req, res) => {
       producto_nombre,
       cantidad,
       precio_unitario,
-      fiado,
+      Fiado,
       total,
       DATE_FORMAT(fecha, '%d/%m/%Y %H:%i:%s') as fecha_formateada,
       fecha
@@ -656,49 +658,8 @@ app.delete("/productos/:id", (req, res) => {
   });
 });
 
-// Obtener todas las ventas fiadas
-app.get("/ventas/fiadas", (req, res) => {
-  console.log("💳 Obteniendo ventas fiadas...");
-  
-  db.query(
-    `SELECT 
-      v.*,
-      DATE_FORMAT(v.fecha, '%d/%m/%Y %H:%i') as fecha_formateada
-    FROM ventas v
-    WHERE v.fiado = TRUE
-    ORDER BY v.fecha DESC`,
-    (err, result) => {
-      if (err) {
-        console.error("❌ Error al obtener ventas fiadas:", err);
-        return res.status(500).json({ message: "Error al obtener ventas fiadas" });
-      }
-      console.log("✅ Ventas fiadas obtenidas:", result.length);
-      res.json(result);
-    }
-  );
-});
 
-// Obtener estadísticas de fiado
-app.get("/ventas/fiadas/estadisticas", (req, res) => {
-  console.log("📊 Obteniendo estadísticas de fiado...");
-  
-  db.query(
-    `SELECT 
-      COUNT(*) as total_ventas_fiadas,
-      COUNT(DISTINCT usuario_id) as usuarios_con_deuda,
-      AVG(total) as promedio_por_venta
-    FROM ventas
-    WHERE fiado = TRUE`,
-    (err, result) => {
-      if (err) {
-        console.error("❌ Error al obtener estadísticas:", err);
-        return res.status(500).json({ message: "Error al obtener estadísticas" });
-      }
-      console.log("✅ Estadísticas de fiado obtenidas");
-      res.json(result[0]);
-    }
-  );
-});
+
 
 //verifica que este funcionando el backend y las url de express
 app.listen(3001, () => {

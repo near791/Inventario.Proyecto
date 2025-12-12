@@ -15,7 +15,7 @@ function Vender({ onCerrar, usuarioId, nombreUsuario }) {
   const [carrito, setCarrito] = useState([]);//lista de productos añadidos antes de confirmar la venta
   const [toasts, setToasts] = useState([]);//mensajes de notificación
   const [modalConfirmacion, setModalConfirmacion] = useState(null);//mensaje de confirmación
-  const [Fiado, setFiado] = useState(false);
+  const [Fiado, setFiado] = useState();
 
 // Se ejecuta al iniciar el componente.
 // Carga todos los productos desde el servidor
@@ -97,14 +97,12 @@ function Vender({ onCerrar, usuarioId, nombreUsuario }) {
       subtotal: precioConDescuento * cantidadNum,
       granel: productoSeleccionado.granel,
       descuento: productoSeleccionado.descuento,
-      fiado: Fiado
     };
 
     setCarrito([...carrito, nuevoItem]);
     setNombreProducto("");
     setCantidad("");
     setProductoSeleccionado(null);
-    setFiado(false);
     mostrarToast("Producto agregado al carrito", "exito");
   };
 
@@ -135,7 +133,7 @@ function Vender({ onCerrar, usuarioId, nombreUsuario }) {
       const response = await Axios.post("http://localhost:3001/productos/vender", {
         usuario_id: usuarioId,
         productos: carrito,
-      
+        tipo_pago: Fiado ? 'Fiado' : 'Pagado'
       });
 
       // Mostrar mensaje con ID de transacción
@@ -159,9 +157,9 @@ function Vender({ onCerrar, usuarioId, nombreUsuario }) {
         transaccion_id: transaccionId,
         total: response.data.total_general,
         productos: response.data.productos_vendidos,
-        fiado: response.data.total_ventas_fiadas
       });
 
+      setFiado(false);
       setCarrito([]);
       setTimeout(() => {
         if (onCerrar) onCerrar();
@@ -353,19 +351,6 @@ function Vender({ onCerrar, usuarioId, nombreUsuario }) {
                 <div key={index} className="carrito-item">
                   <div className="carrito-item-info">
                     <div className="carrito-item-nombre">{item.nombre}</div>
-                     {item.fiado && (
-                        <span className="badge-fiado" style={{
-                          marginLeft: '8px',
-                          background: '#f39c12',
-                          color: 'white',
-                          padding: '2px 8px',
-                          borderRadius: '12px',
-                          fontSize: '11px',
-                          fontWeight: 'bold'
-                        }}>
-                          FIADO
-                        </span>
-                      )}
                     <div className="carrito-item-detalles">
                       {item.cantidad} {item.granel ? "kg" : "unid"} × ${item.precio_unitario.toFixed(2)}
                       {item.descuento > 0 && (
