@@ -295,7 +295,7 @@ app.post("/productos/vender", (req, res) => {
           cantidad,
           precio_unitario,
           subtotal,
-          fiado: fiado || false 
+          Fiado: Fiado ? 1 : 0
         });
 
         // Verificar producto y stock
@@ -338,6 +338,8 @@ app.post("/productos/vender", (req, res) => {
                 });
               }
 
+              const esFiado = Fiado ? 1 : 0;
+
               // Registrar la venta CON transaccion_id
               db.query(
                 `INSERT INTO ventas (
@@ -350,7 +352,7 @@ app.post("/productos/vender", (req, res) => {
                 cantidad, 
                 precio_unitario, 
                 total, 
-                fiado
+                Fiado
                 ) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [transaccionId, usuarioIdNum, nombreUsuario, (fiado ? cliente : null), producto_id, producto.nombre, cantidad, precio_unitario, subtotal, (fiado ? 1 : 0)],
@@ -378,7 +380,7 @@ app.post("/productos/vender", (req, res) => {
                     productosConStockBajo.push({
                       nombre: producto.nombre,
                       cantidad_actual: nuevaCantidad,
-                      stock_minimo: producto.stock_minimo
+                      stock_minimo: producto.stock_minimo,
                     });
                   }
 
@@ -541,7 +543,7 @@ app.get("/ventas/historial", (req, res) => {
       producto_nombre,
       cantidad,
       precio_unitario,
-      fiado,
+      Fiado,
       total,
       DATE_FORMAT(fecha, '%d/%m/%Y %H:%i:%s') as fecha_formateada,
       fecha
@@ -817,6 +819,7 @@ const actualizarCaducidad = () => {
   );
 };
 
+<<<<<<< HEAD
 // Obtener ventas fiadas con detalle
 app.get("/ventas/fiadas/detalle", (req, res) => {
   console.log("💳 Obteniendo detalle de ventas fiadas...");
@@ -871,6 +874,9 @@ app.get("/ventas/fiadas/por-cliente", (req, res) => {
     }
   );
 });
+=======
+
+>>>>>>> 98f43e069cff51f095a0d0ed3f1086fcedaf1432
 
 //verifica que este funcionando el backend y las url de express
 app.listen(3001, () => {

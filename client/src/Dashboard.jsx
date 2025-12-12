@@ -1127,7 +1127,7 @@ const cargarVentasFiadas = async () => {
                             </tbody>
 
 
-                            
+
                           </table>
                         </div>
                       )}

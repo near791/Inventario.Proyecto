@@ -106,7 +106,6 @@ function Vender({ onCerrar, usuarioId, nombreUsuario }) {
     setNombreProducto("");
     setCantidad("");
     setProductoSeleccionado(null);
-    setFiado(false);
     mostrarToast("Producto agregado al carrito", "exito");
   };
 
@@ -188,9 +187,9 @@ function Vender({ onCerrar, usuarioId, nombreUsuario }) {
         transaccion_id: transaccionId,
         total: response.data.total_general,
         productos: response.data.productos_vendidos,
-        fiado: response.data.total_ventas_fiadas
       });
 
+      setFiado(false);
       setCarrito([]);
       setNombreCliente("");
       setTimeout(() => {
@@ -403,19 +402,6 @@ function Vender({ onCerrar, usuarioId, nombreUsuario }) {
                 <div key={index} className="carrito-item">
                   <div className="carrito-item-info">
                     <div className="carrito-item-nombre">{item.nombre}</div>
-                     {item.fiado && (
-                        <span className="badge-fiado" style={{
-                          marginLeft: '8px',
-                          background: '#f39c12',
-                          color: 'white',
-                          padding: '2px 8px',
-                          borderRadius: '12px',
-                          fontSize: '11px',
-                          fontWeight: 'bold'
-                        }}>
-                          FIADO
-                        </span>
-                      )}
                     <div className="carrito-item-detalles">
                       {item.cantidad} {item.granel ? "kg" : "unid"} × ${item.precio_unitario.toFixed(2)}
                       {item.descuento > 0 && (
