@@ -819,7 +819,6 @@ const actualizarCaducidad = () => {
   );
 };
 
-<<<<<<< HEAD
 // Obtener ventas fiadas con detalle
 app.get("/ventas/fiadas/detalle", (req, res) => {
   console.log("💳 Obteniendo detalle de ventas fiadas...");
@@ -874,9 +873,6 @@ app.get("/ventas/fiadas/por-cliente", (req, res) => {
     }
   );
 });
-=======
-
->>>>>>> 98f43e069cff51f095a0d0ed3f1086fcedaf1432
 
 //verifica que este funcionando el backend y las url de express
 app.listen(3001, () => {
