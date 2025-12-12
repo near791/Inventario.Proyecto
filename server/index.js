@@ -264,7 +264,7 @@ app.post("/productos/vender", (req, res) => {
               transaccion_id: transaccionId,
               usuario: nombreUsuario,
               productos_vendidos: ventasRealizadas,
-              total_general: totalVentaGeneral
+              total_general: totalVentaGeneral,
             });
 
             res.json({ 
@@ -272,14 +272,22 @@ app.post("/productos/vender", (req, res) => {
               transaccion_id: transaccionId,
               productos_vendidos: ventasRealizadas,
               total_general: totalVentaGeneral,
-              productos_stock_bajo: productosConStockBajo
+              productos_stock_bajo: productosConStockBajo,
             });
           });
           return;
         }
 
         const item = productos[index];
-        const { producto_id, cantidad, precio_unitario, subtotal } = item;
+        const { producto_id, cantidad, precio_unitario, subtotal, fiado } = item;
+
+         console.log(`📦 Procesando producto ${index + 1}:`, {
+          producto_id,
+          cantidad,
+          precio_unitario,
+          subtotal,
+          fiado: fiado || false 
+        });
 
         // Verificar producto y stock
         db.query("SELECT * FROM productos WHERE id = ?", [producto_id], (err, result) => {
@@ -323,9 +331,19 @@ app.post("/productos/vender", (req, res) => {
 
               // Registrar la venta CON transaccion_id
               db.query(
-                `INSERT INTO ventas (transaccion_id, usuario_id, usuario_nombre, producto_id, producto_nombre, cantidad, precio_unitario, total) 
+                `INSERT INTO ventas (
+                transaccion_id, 
+                usuario_id,
+                usuario_nombre, 
+                producto_id, 
+                producto_nombre, 
+                cantidad, 
+                precio_unitario, 
+                total, 
+                fiado
+                ) 
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-                [transaccionId, usuarioIdNum, nombreUsuario, producto_id, producto.nombre, cantidad, precio_unitario, subtotal],
+                [transaccionId, usuarioIdNum, nombreUsuario, producto_id, producto.nombre, cantidad, precio_unitario, subtotal, fiado|| false],
                 (err) => {
                   if (err) {
                     return db.rollback(() => {
@@ -505,6 +523,7 @@ app.get("/ventas/historial", (req, res) => {
       producto_nombre,
       cantidad,
       precio_unitario,
+      fiado,
       total,
       DATE_FORMAT(fecha, '%d/%m/%Y %H:%i:%s') as fecha_formateada,
       fecha
@@ -584,7 +603,7 @@ app.get("/productos/promociones", (req, res) => {
 // Editar un producto
 app.put("/productos/:id", (req, res) => {
   const { id } = req.params;
-  const { nombre, cantidad, precio, stock_minimo, descuento, granel } = req.body;
+  const { nombre, cantidad, precio, stock_minimo, descuento, granel} = req.body;
 
   console.log("✏️ [RUTA PUT] Editando producto ID:", id, req.body);
 
@@ -664,6 +683,28 @@ app.get("/productos/alertas-caducidad", (req, res) => {
   );
 });
 
+// Obtener todas las ventas fiadas
+app.get("/ventas/fiadas", (req, res) => {
+  console.log("💳 Obteniendo ventas fiadas...");
+  
+  db.query(
+    `SELECT 
+      v.*,
+      DATE_FORMAT(v.fecha, '%d/%m/%Y %H:%i') as fecha_formateada
+    FROM ventas v
+    WHERE v.fiado = TRUE
+    ORDER BY v.fecha DESC`,
+    (err, result) => {
+      if (err) {
+        console.error("❌ Error al obtener ventas fiadas:", err);
+        return res.status(500).json({ message: "Error al obtener ventas fiadas" });
+      }
+      console.log("✅ Ventas fiadas obtenidas:", result.length);
+      res.json(result);
+    }
+  );
+});
+
 app.put("/productos/:id/caducidad", (req, res) => {
   const { id } = req.params;
   const { dias_caducidad } = req.body;
@@ -690,6 +731,28 @@ app.put("/productos/:id/caducidad", (req, res) => {
       }
       console.log("✅ Caducidad actualizada correctamente:", id);
       res.json({ message: "Caducidad actualizada correctamente" });
+    }
+  );
+});
+
+// Obtener estadísticas de fiado
+app.get("/ventas/fiadas/estadisticas", (req, res) => {
+  console.log("📊 Obteniendo estadísticas de fiado...");
+  
+  db.query(
+    `SELECT 
+      COUNT(*) as total_ventas_fiadas,
+      COUNT(DISTINCT usuario_id) as usuarios_con_deuda,
+      AVG(total) as promedio_por_venta
+    FROM ventas
+    WHERE fiado = TRUE`,
+    (err, result) => {
+      if (err) {
+        console.error("❌ Error al obtener estadísticas:", err);
+        return res.status(500).json({ message: "Error al obtener estadísticas" });
+      }
+      console.log("✅ Estadísticas de fiado obtenidas");
+      res.json(result[0]);
     }
   );
 });
@@ -765,4 +828,9 @@ app.listen(3001, () => {
   // Ejecutar cada hora (3600000 ms = 1 hora)
   setInterval(actualizarCaducidad, 3600000);
   console.log("✅ Sistema de caducidad activado (actualización cada hora)");
+
+  console.log("   GET    /ventas/fiadas");
+  console.log("   GET    /ventas/fiadas/por-usuario");
+  console.log("   GET    /ventas/fiadas/estadisticas");
+
 });
