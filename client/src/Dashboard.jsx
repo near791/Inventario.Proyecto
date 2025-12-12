@@ -28,6 +28,10 @@ function Dashboard() {
   const [ventasFiadas, setVentasFiadas] = useState([]);
   const [deudaPorCliente, setDeudaPorCliente] = useState([]);
 
+  //funciones para abonar
+  const [modalAbono, setModalAbono] = useState(null);
+  const [montoAbono, setMontoAbono] = useState("");
+
   //Estados para caducidad
   const [alertasCaducidad, setAlertasCaducidad] = useState([]);
   const [granel, setGranel] = useState(false);
@@ -476,6 +480,81 @@ const cargarVentasFiadas = async () => {
     mostrarToast("Error al cargar ventas fiadas", "error");
   }
 };
+
+  const abrirModalAbono = (cliente) => {
+    setModalAbono({
+      cliente: cliente.cliente,
+      deudaTotal: cliente.deuda_total,
+      totalOriginal: cliente.total_original || 0,
+      totalAbonado: cliente.total_abonado || 0
+    });
+    setMontoAbono("");
+  };
+
+  const procesarAbono = async () => {
+  if (!montoAbono || parseFloat(montoAbono) <= 0) {
+    mostrarToast("Ingresa un monto válido", "advertencia");
+    return;
+  }
+
+  const montoNum = parseFloat(montoAbono);
+  const deudaTotal = parseFloat(modalAbono.deudaTotal);
+
+  if (montoNum > deudaTotal) {
+    mostrarToast(`El monto supera la deuda total ($${deudaTotal.toFixed(2)})`, "advertencia");
+    return;
+  }
+
+  try {
+    const response = await Axios.post("http://localhost:3001/ventas/fiadas/abonar", {
+      cliente: modalAbono.cliente,
+      monto: montoNum
+    });
+
+    mostrarToast(
+      `✅ Abono registrado: $${response.data.monto_abonado.toFixed(2)}. Deuda restante: $${response.data.deuda_actual.toFixed(2)}`,
+      "exito",
+      5000
+    );
+
+    setModalAbono(null);
+    setMontoAbono("");
+    cargarVentasFiadas();
+  } catch (error) {
+    mostrarToast(error?.response?.data?.message || "Error al procesar abono", "error");
+  }
+};
+
+  const pagarCompleto = async (cliente) => {
+    const deudaTotal = parseFloat(cliente.deuda_total);
+    const totalAbonado = parseFloat(cliente.total_abonado || 0);
+    
+    let mensaje = `¿Confirmar pago completo de $${deudaTotal.toFixed(2)} para ${cliente.cliente}?`;
+    if (totalAbonado > 0) {
+      mensaje += `\n\n(Ya se abonaron $${totalAbonado.toFixed(2)})`;
+    }
+    mensaje += `\n\nTodas las ventas pasarán a estado PAGADO.`;
+
+    const confirmar = await mostrarConfirmacion(mensaje);
+
+    if (!confirmar) return;
+
+    try {
+      const response = await Axios.post("http://localhost:3001/ventas/fiadas/pagar-completo", {
+        cliente: cliente.cliente
+      });
+
+      mostrarToast(
+        `✅ Deuda saldada: ${cliente.cliente} - $${response.data.monto_pagado.toFixed(2)}`,
+        "exito",
+        5000
+      );
+
+      cargarVentasFiadas();
+    } catch (error) {
+      mostrarToast(error?.response?.data?.message || "Error al saldar deuda", "error");
+    }
+  };
 
   return (
     <div className="dashboard">
@@ -1173,9 +1252,12 @@ const cargarVentasFiadas = async () => {
                           <tr>
                             <th>Cliente</th>
                             <th>Total Compras</th>
-                            <th>Deuda Total</th>
+                            <th>Total Original</th>
+                            <th>Abonado</th>
+                            <th>Deuda Actual</th>
                             <th>Primera Compra</th>
                             <th>Última Compra</th>
+                            <th>Acciones</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -1183,9 +1265,29 @@ const cargarVentasFiadas = async () => {
                             <tr key={index}>
                               <td><strong>{cliente.cliente}</strong></td>
                               <td>{cliente.total_compras}</td>
+                              <td>${parseFloat(cliente.total_original || 0).toFixed(2)}</td>
+                              <td style={{color: '#f39c12', fontWeight: 'bold'}}>
+                                ${parseFloat(cliente.total_abonado || 0).toFixed(2)}
+                              </td>
                               <td className="ingreso">${parseFloat(cliente.deuda_total).toFixed(2)}</td>
                               <td className="fecha">{new Date(cliente.primera_compra).toLocaleDateString('es-CL')}</td>
                               <td className="fecha">{new Date(cliente.ultima_compra).toLocaleDateString('es-CL')}</td>
+                              <td>
+                                <button 
+                                  className="btn-abonar"
+                                  onClick={() => abrirModalAbono(cliente)}
+                                  title="Abonar monto parcial"
+                                >
+                                  💵 Abonar
+                                </button>
+                                <button 
+                                  className="btn-pagar-completo"
+                                  onClick={() => pagarCompleto(cliente)}
+                                  title="Pagar deuda completa"
+                                >
+                                  ✅ Pagar Todo
+                                </button>
+                              </td>
                             </tr>
                           ))}
                         </tbody>
@@ -1229,6 +1331,60 @@ const cargarVentasFiadas = async () => {
                       </table>
                     </div>
                   )}
+                </div>
+              </div>
+            </div>
+          )}
+          {/* Modal de Abono */}
+          {modalAbono && (
+            <div className="modal-confirmacion-overlay" onClick={() => setModalAbono(null)}>
+              <div className="modal-abono" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-confirmacion-icono">💵</div>
+                <h3>Abonar a Deuda</h3>
+                
+                <div className="detalle-deuda">
+                  <p><strong>Cliente:</strong> {modalAbono.cliente}</p>
+                  <p><strong>Total Original:</strong> ${parseFloat(modalAbono.totalOriginal).toFixed(2)}</p>
+                  {modalAbono.totalAbonado > 0 && (
+                    <p style={{color: '#f39c12'}}>
+                      <strong>Ya Abonado:</strong> ${parseFloat(modalAbono.totalAbonado).toFixed(2)}
+                    </p>
+                  )}
+                  <p style={{fontSize: '18px', color: '#27ae60', marginTop: '10px'}}>
+                    <strong>Deuda Actual:</strong> ${parseFloat(modalAbono.deudaTotal).toFixed(2)}
+                  </p>
+                </div>
+                
+                <label style={{marginTop: '20px', display: 'block', fontWeight: 'bold', color: '#333'}}>
+                  Monto a Abonar:
+                </label>
+                <input
+                  type="number"
+                  value={montoAbono}
+                  onChange={(e) => setMontoAbono(e.target.value)}
+                  placeholder="Ingresa el monto"
+                  min="0"
+                  step="0.01"
+                  max={modalAbono.deudaTotal}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    fontSize: '16px',
+                    border: '2px solid #ddd',
+                    borderRadius: '8px',
+                    marginTop: '8px',
+                    boxSizing: 'border-box'
+                  }}
+                  autoFocus
+                />
+                
+                <div className="modal-confirmacion-botones" style={{marginTop: '25px'}}>
+                  <button className="btn-confirmar-modal" onClick={procesarAbono}>
+                    💰 Registrar Abono
+                  </button>
+                  <button className="btn-cancelar-modal" onClick={() => setModalAbono(null)}>
+                    Cancelar
+                  </button>
                 </div>
               </div>
             </div>

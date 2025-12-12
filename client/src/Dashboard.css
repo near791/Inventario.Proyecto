@@ -1197,3 +1197,99 @@
   text-align: center;
   font-size: 24px;
 }
+
+/* Botones de saldar deuda */
+.btn-abonar,
+.btn-pagar-completo {
+  border: none;
+  padding: 6px 12px;
+  margin: 0 3px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.btn-abonar {
+  background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+  color: white;
+}
+
+.btn-abonar:hover {
+  background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(243, 156, 18, 0.4);
+}
+
+.btn-pagar-completo {
+  background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+  color: white;
+}
+
+.btn-pagar-completo:hover {
+  background: linear-gradient(135deg, #229954 0%, #1e8449 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(39, 174, 96, 0.4);
+}
+
+/* Modal de Abono */
+.modal-abono {
+  background: white;
+  border-radius: 16px;
+  padding: 30px;
+  width: 450px;
+  max-width: 90%;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  animation: scaleIn 0.3s ease;
+}
+
+.modal-abono p {
+  margin: 8px 0;
+  color: #555;
+  font-size: 15px;
+}
+
+.modal-abono .detalle-deuda {
+  background-color: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  margin: 15px 0;
+  border-left: 4px solid #f39c12;
+}
+
+.modal-abono .detalle-deuda p {
+  margin: 5px 0;
+  text-align: left;
+}
+
+.modal-abono input:focus {
+  outline: none;
+  border-color: #f39c12;
+}
+
+/* Mostrar abonos en tabla */
+.abono-info {
+  font-size: 12px;
+  color: #f39c12;
+  font-weight: bold;
+  display: block;
+  margin-top: 3px;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+  .btn-abonar,
+  .btn-pagar-completo {
+    display: block;
+    width: 100%;
+    margin: 3px 0;
+  }
+  
+  .modal-abono {
+    width: 90%;
+    padding: 24px;
+  }
+}

@@ -846,7 +846,214 @@ app.get("/ventas/fiadas/detalle", (req, res) => {
   );
 });
 
-// Obtener deuda por cliente
+// Abono parcial - se descuenta de las ventas más antiguas del cliente
+app.post("/ventas/fiadas/abonar", (req, res) => {
+  const { cliente, monto } = req.body;
+  
+  console.log("💵 Procesando abono:", { cliente, monto });
+
+  if (!cliente || !monto || parseFloat(monto) <= 0) {
+    return res.status(400).json({ message: "Cliente y monto válido son obligatorios" });
+  }
+
+  const montoNum = parseFloat(monto);
+
+  // Obtener todas las ventas fiadas del cliente
+  db.query(
+    `SELECT id, total, COALESCE(abonos, 0) as abonos
+     FROM ventas 
+     WHERE cliente = ? AND Fiado = 1
+     ORDER BY fecha ASC`,
+    [cliente],
+    (err, ventas) => {
+      if (err) {
+        console.error("❌ Error al obtener ventas:", err);
+        return res.status(500).json({ message: "Error al obtener ventas" });
+      }
+
+      if (ventas.length === 0) {
+        return res.status(404).json({ message: "Este cliente no tiene deudas pendientes" });
+      }
+
+      // Calcular deuda total actual
+      const deudaTotal = ventas.reduce((sum, v) => sum + (parseFloat(v.total) - parseFloat(v.abonos)), 0);
+
+      if (montoNum > deudaTotal) {
+        return res.status(400).json({ 
+          message: `El monto a abonar ($${montoNum.toFixed(2)}) supera la deuda total ($${deudaTotal.toFixed(2)})` 
+        });
+      }
+
+      // Iniciar transacción
+      db.beginTransaction((err) => {
+        if (err) {
+          console.error("❌ Error al iniciar transacción:", err);
+          return res.status(500).json({ message: "Error al procesar abono" });
+        }
+
+        let montoRestante = montoNum;
+        let ventasActualizadas = 0;
+
+        // Función recursiva para distribuir el abono
+        const procesarVenta = (index) => {
+          if (index >= ventas.length || montoRestante <= 0) {
+            // Finalizar transacción
+            db.commit((err) => {
+              if (err) {
+                return db.rollback(() => {
+                  console.error("❌ Error al confirmar transacción:", err);
+                  res.status(500).json({ message: "Error al confirmar abono" });
+                });
+              }
+
+              const nuevaDeuda = deudaTotal - montoNum;
+              console.log("✅ Abono distribuido:", { 
+                cliente, 
+                monto: montoNum, 
+                ventas_actualizadas: ventasActualizadas,
+                deuda_restante: nuevaDeuda 
+              });
+              
+              res.json({ 
+                message: "Abono registrado correctamente",
+                monto_abonado: montoNum,
+                deuda_anterior: deudaTotal,
+                deuda_actual: nuevaDeuda,
+                ventas_actualizadas: ventasActualizadas
+              });
+            });
+            return;
+          }
+
+          const venta = ventas[index];
+          const deudaVenta = parseFloat(venta.total) - parseFloat(venta.abonos);
+
+          if (deudaVenta <= 0) {
+            // Esta venta ya está pagada, siguiente
+            procesarVenta(index + 1);
+            return;
+          }
+
+          const abonoAplicar = Math.min(montoRestante, deudaVenta);
+          const nuevoAbono = parseFloat(venta.abonos) + abonoAplicar;
+
+          db.query(
+            "UPDATE ventas SET abonos = ? WHERE id = ?",
+            [nuevoAbono, venta.id],
+            (err) => {
+              if (err) {
+                return db.rollback(() => {
+                  console.error("❌ Error al actualizar venta:", err);
+                  res.status(500).json({ message: "Error al aplicar abono" });
+                });
+              }
+
+              montoRestante -= abonoAplicar;
+              ventasActualizadas++;
+              
+              console.log(`📝 Venta ${venta.id}: abono +$${abonoAplicar.toFixed(2)} = $${nuevoAbono.toFixed(2)}/${venta.total}`);
+
+              // Procesar siguiente venta
+              procesarVenta(index + 1);
+            }
+          );
+        };
+
+        // Iniciar procesamiento
+        procesarVenta(0);
+      });
+    }
+  );
+});
+
+// Pagar completo - cambia TODAS las ventas fiadas del cliente a pagadas
+app.post("/ventas/fiadas/pagar-completo", (req, res) => {
+  const { cliente } = req.body;
+  
+  console.log("💰 Pagando deuda completa:", { cliente });
+
+  if (!cliente) {
+    return res.status(400).json({ message: "Cliente es obligatorio" });
+  }
+
+  // Iniciar transacción
+  db.beginTransaction((err) => {
+    if (err) {
+      console.error("❌ Error al iniciar transacción:", err);
+      return res.status(500).json({ message: "Error al procesar pago" });
+    }
+
+    // Obtener deuda total (considerando abonos previos)
+    db.query(
+      `SELECT 
+        COUNT(*) as total_ventas,
+        SUM(total - COALESCE(abonos, 0)) as deuda_total,
+        SUM(COALESCE(abonos, 0)) as total_abonado
+       FROM ventas 
+       WHERE cliente = ? AND Fiado = 1`,
+      [cliente],
+      (err, result) => {
+        if (err) {
+          return db.rollback(() => {
+            console.error("❌ Error al obtener deuda:", err);
+            res.status(500).json({ message: "Error al obtener deuda" });
+          });
+        }
+
+        const deudaTotal = parseFloat(result[0].deuda_total) || 0;
+        const totalVentas = parseInt(result[0].total_ventas) || 0;
+        const totalAbonado = parseFloat(result[0].total_abonado) || 0;
+
+        if (totalVentas === 0 || deudaTotal === 0) {
+          return db.rollback(() => {
+            res.status(400).json({ message: "Este cliente no tiene deudas pendientes" });
+          });
+        }
+
+        // Actualizar todas las ventas fiadas a pagadas (Fiado = 0)
+        db.query(
+          `UPDATE ventas SET Fiado = 0 WHERE cliente = ? AND Fiado = 1`,
+          [cliente],
+          (err, updateResult) => {
+            if (err) {
+              return db.rollback(() => {
+                console.error("❌ Error al actualizar ventas:", err);
+                res.status(500).json({ message: "Error al actualizar ventas" });
+              });
+            }
+
+            // Confirmar transacción
+            db.commit((err) => {
+              if (err) {
+                return db.rollback(() => {
+                  console.error("❌ Error al confirmar transacción:", err);
+                  res.status(500).json({ message: "Error al confirmar pago" });
+                });
+              }
+
+              console.log("✅ Deuda saldada completamente:", { 
+                cliente, 
+                monto_pagado: deudaTotal,
+                ventas_actualizadas: updateResult.affectedRows,
+                total_abonado_previo: totalAbonado
+              });
+              
+              res.json({ 
+                message: "Deuda saldada completamente",
+                monto_pagado: deudaTotal,
+                cliente,
+                ventas_actualizadas: updateResult.affectedRows,
+                total_abonado_previo: totalAbonado
+              });
+            });
+          }
+        );
+      }
+    );
+  });
+});
+
+// Actualizar la ruta de deuda por cliente para considerar abonos
 app.get("/ventas/fiadas/por-cliente", (req, res) => {
   console.log("👥 Obteniendo deuda por cliente...");
   
@@ -854,12 +1061,15 @@ app.get("/ventas/fiadas/por-cliente", (req, res) => {
     `SELECT 
       cliente,
       COUNT(*) as total_compras,
-      SUM(total) as deuda_total,
+      SUM(total) as total_original,
+      SUM(COALESCE(abonos, 0)) as total_abonado,
+      SUM(total - COALESCE(abonos, 0)) as deuda_total,
       MIN(fecha) as primera_compra,
       MAX(fecha) as ultima_compra
     FROM ventas
-    WHERE fiado = TRUE AND cliente IS NOT NULL
+    WHERE Fiado = 1 AND cliente IS NOT NULL
     GROUP BY cliente
+    HAVING deuda_total > 0
     ORDER BY deuda_total DESC`,
     (err, result) => {
       if (err) {
