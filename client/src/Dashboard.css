@@ -1025,3 +1025,67 @@
   background: #555;
 }
 
+/* Resaltar productos con caducidad próxima */
+.tabla-inventario tr.caducidad-proxima {
+  background-color: #fff3e0 !important;
+}
+
+/* Spinner para carga de datos */
+.cargando-caducidad {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #2ecc71;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-left: 8px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.notificacion-item.caducidad {
+  background-color: #fff3e0;
+  border-left: 4px solid #ff9800;
+  color: #e65100;
+}
+
+.notificacion-item.caducidad strong {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 15px;
+}
+
+.notificacion-item.caducidad span {
+  display: block;
+  margin-top: 5px;
+}
+
+.tabla-inventario td span {
+  font-style: italic;
+}
+
+/* Estilo especial para productos vencidos (días = 0) */
+.notificacion-item.caducidad:has(span:contains("VENCIDO")) {
+  background-color: #ffebee;
+  border-left: 4px solid #c0392b;
+  animation: pulsoVencido 2s ease-in-out infinite;
+}
+
+@keyframes pulsoVencido {
+  0%, 100% {
+    background-color: #ffebee;
+  }
+  50% {
+    background-color: #ffcdd2;
+  }
+}
+
+.tabla-inventario input[type="number"]:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+}

@@ -108,24 +108,25 @@ app.post("/login", (req, res) => {
   );
 });
 
-// Obtener lista de los productos
 app.get("/productos", (req, res) => {
   console.log("📋 Obteniendo lista de productos...");
-  db.query("SELECT * FROM productos ORDER BY nombre", (err, result) => {
-    if (err) {
-      console.error("❌ Error al obtener productos:", err);
-      return res.status(500).json({ message: "Error al obtener productos" });
+  db.query(
+    "SELECT * FROM productos ORDER BY nombre", 
+    (err, result) => {
+      if (err) {
+        console.error("❌ Error al obtener productos:", err);
+        return res.status(500).json({ message: "Error al obtener productos" });
+      }
+      console.log("✅ Productos obtenidos:", result.length);
+      res.json(result);
     }
-    console.log("✅ Productos obtenidos:", result.length);
-    res.json(result);
-  });
+  );
 });
 
-// Agregar o actualizar cantidad de producto
 app.post("/productos/agregar", (req, res) => {
-  const { nombre, cantidad, precio, granel } = req.body;
+  const { nombre, cantidad, precio, granel, tiene_caducidad } = req.body; // 🆕 Nuevo campo
   
-  console.log("📦 Agregando producto:", { nombre, cantidad, precio, granel });
+  console.log("📦 Agregando producto:", { nombre, cantidad, precio, granel, tiene_caducidad });
 
   if (!nombre || cantidad === undefined || cantidad === null) {
     return res.status(400).json({ message: "Nombre y cantidad son obligatorios" });
@@ -134,6 +135,7 @@ app.post("/productos/agregar", (req, res) => {
   const cantidadNum = parseFloat(cantidad);
   const precioNum = precio ? parseFloat(precio) : null;
   const esGranel = granel === true || granel === "true" || granel === 1;
+  const diasCaducidad = tiene_caducidad ? 30 : null;
 
   if (isNaN(cantidadNum) || cantidadNum <= 0) {
     return res.status(400).json({ message: "La cantidad debe ser un número válido mayor a 0" });
@@ -176,15 +178,22 @@ app.post("/productos/agregar", (req, res) => {
         return res.status(400).json({ message: "El precio es obligatorio y debe ser válido para productos nuevos" });
       }
       
+      // 🆕 INSERTAR CON CADUCIDAD CONDICIONAL
       db.query(
-        "INSERT INTO productos (nombre, cantidad, precio, granel) VALUES (?, ?, ?, ?)",
-        [nombre, cantidadNum, precioNum, esGranel],
+        `INSERT INTO productos (nombre, cantidad, precio, granel, dias_caducidad, fecha_ultima_actualizacion) 
+         VALUES (?, ?, ?, ?, ?, CURDATE())`,
+        [nombre, cantidadNum, precioNum, esGranel, diasCaducidad],
         (err) => {
           if (err) {
             console.error("❌ Error INSERT:", err);
             return res.status(500).json({ message: "Error al crear producto" });
           }
-          console.log("✅ Producto creado:", nombre, "Cantidad:", cantidadNum, "Precio:", precioNum, "Granel:", esGranel);
+          console.log("✅ Producto creado:", nombre, {
+            cantidad: cantidadNum, 
+            precio: precioNum, 
+            granel: esGranel,
+            dias_caducidad: diasCaducidad
+          });
           res.json({ message: "Producto creado correctamente", productoExistente: false });
         }
       );
@@ -637,6 +646,96 @@ app.delete("/productos/:id", (req, res) => {
   });
 });
 
+app.get("/productos/alertas-caducidad", (req, res) => {
+  console.log("⏰ Obteniendo alertas de caducidad...");
+  db.query(
+    `SELECT * FROM productos 
+     WHERE dias_caducidad IS NOT NULL 
+     AND dias_caducidad <= 5  
+     ORDER BY dias_caducidad ASC`,
+    (err, result) => {
+      if (err) {
+        console.error("❌ Error al obtener alertas de caducidad:", err);
+        return res.status(500).json({ message: "Error al obtener alertas de caducidad" });
+      }
+      console.log("✅ Alertas de caducidad obtenidas:", result.length);
+      res.json(result);
+    }
+  );
+});
+
+app.put("/productos/:id/caducidad", (req, res) => {
+  const { id } = req.params;
+  const { dias_caducidad } = req.body;
+
+  console.log("📅 Actualizando caducidad del producto ID:", id, "a", dias_caducidad, "días");
+
+  if (dias_caducidad === undefined || dias_caducidad === null) {
+    return res.status(400).json({ message: "Los días de caducidad son obligatorios" });
+  }
+
+  const diasNum = parseInt(dias_caducidad);
+  
+  if (isNaN(diasNum) || diasNum < 0) {
+    return res.status(400).json({ message: "Los días deben ser un número válido mayor o igual a 0" });
+  }
+
+  db.query(
+    "UPDATE productos SET dias_caducidad = ?, fecha_ultima_actualizacion = CURDATE() WHERE id = ?",
+    [diasNum, id],
+    (err) => {
+      if (err) {
+        console.error("❌ Error UPDATE caducidad:", err);
+        return res.status(500).json({ message: "Error al actualizar caducidad" });
+      }
+      console.log("✅ Caducidad actualizada correctamente:", id);
+      res.json({ message: "Caducidad actualizada correctamente" });
+    }
+  );
+});
+
+const actualizarCaducidad = () => {
+  console.log("🕐 Verificando caducidad de productos...");
+  
+  db.query(
+    // 🆕 SOLO ACTUALIZAR PRODUCTOS CON CADUCIDAD (dias_caducidad IS NOT NULL)
+    `SELECT id, nombre, dias_caducidad, fecha_ultima_actualizacion 
+     FROM productos 
+     WHERE dias_caducidad IS NOT NULL AND dias_caducidad > 0`,
+    (err, productos) => {
+      if (err) {
+        console.error("❌ Error al verificar caducidad:", err);
+        return;
+      }
+
+      productos.forEach(producto => {
+        const fechaUltima = new Date(producto.fecha_ultima_actualizacion);
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+        fechaUltima.setHours(0, 0, 0, 0);
+        
+        const diasPasados = Math.floor((hoy - fechaUltima) / (1000 * 60 * 60 * 24));
+        
+        if (diasPasados > 0) {
+          const nuevosDias = Math.max(0, producto.dias_caducidad - diasPasados);
+          
+          db.query(
+            "UPDATE productos SET dias_caducidad = ?, fecha_ultima_actualizacion = CURDATE() WHERE id = ?",
+            [nuevosDias, producto.id],
+            (err) => {
+              if (err) {
+                console.error(`❌ Error actualizando producto ${producto.id}:`, err);
+              } else {
+                console.log(`✅ ${producto.nombre}: ${producto.dias_caducidad} → ${nuevosDias} días`);
+              }
+            }
+          );
+        }
+      });
+    }
+  );
+};
+
 //verifica que este funcionando el backend y las url de express
 app.listen(3001, () => {
   console.log("🚀 Servidor corriendo en el puerto 3001");
@@ -658,4 +757,12 @@ app.listen(3001, () => {
   console.log("   GET    /ventas/anios-disponibles");
   console.log("   GET    /ventas/por-usuario (filtros: ?mes=1&anio=2024)");
   console.log("   GET    /ventas/hoy");
+
+  console.log("\n⏰ Iniciando sistema de control de caducidad...");
+  // Ejecutar actualización inmediata al iniciar
+  actualizarCaducidad();
+  
+  // Ejecutar cada hora (3600000 ms = 1 hora)
+  setInterval(actualizarCaducidad, 3600000);
+  console.log("✅ Sistema de caducidad activado (actualización cada hora)");
 });
