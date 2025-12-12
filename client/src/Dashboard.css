@@ -1066,6 +1066,71 @@
   background: #555;
 }
 
+/* Resaltar productos con caducidad próxima */
+.tabla-inventario tr.caducidad-proxima {
+  background-color: #fff3e0 !important;
+}
+
+/* Spinner para carga de datos */
+.cargando-caducidad {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #2ecc71;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-left: 8px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.notificacion-item.caducidad {
+  background-color: #fff3e0;
+  border-left: 4px solid #ff9800;
+  color: #e65100;
+}
+
+.notificacion-item.caducidad strong {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 15px;
+}
+
+.notificacion-item.caducidad span {
+  display: block;
+  margin-top: 5px;
+}
+
+.tabla-inventario td span {
+  font-style: italic;
+}
+
+/* Estilo especial para productos vencidos (días = 0) */
+.notificacion-item.caducidad:has(span:contains("VENCIDO")) {
+  background-color: #ffebee;
+  border-left: 4px solid #c0392b;
+  animation: pulsoVencido 2s ease-in-out infinite;
+}
+
+@keyframes pulsoVencido {
+  0%, 100% {
+    background-color: #ffebee;
+  }
+  50% {
+    background-color: #ffcdd2;
+  }
+}
+
+.tabla-inventario input[type="number"]:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+}
+
 .badge-fiado {
   background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
   color: white;
@@ -1091,4 +1156,44 @@
 .tabla-datos tbody tr.venta-fiada {
   background-color: #fff3e0;
   border-left: 4px solid #f39c12;
+}
+
+/* Botón Ver Fiados */
+.btn-ver-fiados {
+  background-color: #f39c12;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 0; /* ✅ Asegurar que no tenga margen superior */
+}
+
+.btn-ver-fiados:hover {
+  background-color: #e67e22;
+  transform: translateY(-2px);
+}
+
+/* Panel de Fiados */
+.panel-fiados {
+  background-color: white;
+  padding: 30px;
+  padding-top: 50px;
+  border-radius: 15px;
+  box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.3);
+  width: 95%;
+  max-width: 1400px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.panel-fiados h3 {
+  margin: 0 0 25px 0;
+  color: #f39c12;
+  text-align: center;
+  font-size: 24px;
 }

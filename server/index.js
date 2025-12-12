@@ -201,9 +201,8 @@ app.post("/productos/agregar", (req, res) => {
   });
 });
 
-// Vender productos a través de la gestion de un carrito de ventas
 app.post("/productos/vender", (req, res) => {
-  const { usuario_id, productos } = req.body;
+  const { usuario_id, productos, cliente } = req.body;
   
   console.log("💰 Vendiendo productos del carrito:", { usuario_id, cantidad_productos: productos.length });
 
@@ -220,9 +219,16 @@ app.post("/productos/vender", (req, res) => {
     return res.status(400).json({ message: "ID de usuario inválido" });
   }
 
-  // Genera una id unica para cada transaccion
   const transaccionId = `TXN-${Date.now()}-${usuarioIdNum}`;
   console.log("🔖 ID de transacción generado:", transaccionId);
+
+  // ✅ DECLARAR LA VARIABLE AQUÍ
+  let productosConStockBajo = [];
+
+  const hayProductosFiados = productos.some(p => p.fiado === true);
+  if (hayProductosFiados && (!cliente || cliente.trim() === '')) {
+    return res.status(400).json({ message: "Debe ingresar el nombre del cliente para ventas fiadas" });
+  }
 
   // Obtener el nombre del usuario
   db.query("SELECT usuario FROM usuarios WHERE id = ?", [usuarioIdNum], (err, usuarioResult) => {
@@ -245,8 +251,9 @@ app.post("/productos/vender", (req, res) => {
       }
 
       let totalVentaGeneral = 0;
+      let totalFiado = 0;
+      let totalPagado = 0;
       let ventasRealizadas = 0;
-      let productosConStockBajo = [];
 
       // Función recursiva para procesar cada producto del carrito
       const procesarProducto = (index) => {
@@ -272,6 +279,8 @@ app.post("/productos/vender", (req, res) => {
               transaccion_id: transaccionId,
               productos_vendidos: ventasRealizadas,
               total_general: totalVentaGeneral,
+              total_fiado: totalFiado,
+              total_pagado: totalPagado,
               productos_stock_bajo: productosConStockBajo,
             });
           });
@@ -281,7 +290,7 @@ app.post("/productos/vender", (req, res) => {
         const item = productos[index];
         const { producto_id, cantidad, precio_unitario, subtotal, fiado } = item;
 
-         console.log(`📦 Procesando producto ${index + 1}:`, {
+        console.log(`📦 Procesando producto ${index + 1}:`, {
           producto_id,
           cantidad,
           precio_unitario,
@@ -334,7 +343,8 @@ app.post("/productos/vender", (req, res) => {
                 `INSERT INTO ventas (
                 transaccion_id, 
                 usuario_id,
-                usuario_nombre, 
+                usuario_nombre,
+                cliente,
                 producto_id, 
                 producto_nombre, 
                 cantidad, 
@@ -342,8 +352,8 @@ app.post("/productos/vender", (req, res) => {
                 total, 
                 fiado
                 ) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-                [transaccionId, usuarioIdNum, nombreUsuario, producto_id, producto.nombre, cantidad, precio_unitario, subtotal, fiado|| false],
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [transaccionId, usuarioIdNum, nombreUsuario, (fiado ? cliente : null), producto_id, producto.nombre, cantidad, precio_unitario, subtotal, (fiado ? 1 : 0)],
                 (err) => {
                   if (err) {
                     return db.rollback(() => {
@@ -353,6 +363,14 @@ app.post("/productos/vender", (req, res) => {
                   }
 
                   totalVentaGeneral += subtotal;
+                  
+                  // ✅ CALCULAR TOTAL FIADO Y PAGADO
+                  if (fiado) {
+                    totalFiado += subtotal;
+                  } else {
+                    totalPagado += subtotal;
+                  }
+                  
                   ventasRealizadas++;
 
                   // Verificar si quedó stock bajo
@@ -798,6 +816,61 @@ const actualizarCaducidad = () => {
     }
   );
 };
+
+// Obtener ventas fiadas con detalle
+app.get("/ventas/fiadas/detalle", (req, res) => {
+  console.log("💳 Obteniendo detalle de ventas fiadas...");
+  
+  db.query(
+    `SELECT 
+      v.id,
+      v.transaccion_id,
+      v.cliente,
+      v.producto_nombre,
+      v.cantidad,
+      v.precio_unitario,
+      v.total,
+      DATE_FORMAT(v.fecha, '%d/%m/%Y %H:%i') as fecha_formateada,
+      v.fecha
+    FROM ventas v
+    WHERE v.fiado = TRUE
+    ORDER BY v.fecha DESC, v.cliente ASC`,
+    (err, result) => {
+      if (err) {
+        console.error("❌ Error al obtener ventas fiadas:", err);
+        return res.status(500).json({ message: "Error al obtener ventas fiadas" });
+      }
+      console.log("✅ Ventas fiadas obtenidas:", result.length);
+      res.json(result);
+    }
+  );
+});
+
+// Obtener deuda por cliente
+app.get("/ventas/fiadas/por-cliente", (req, res) => {
+  console.log("👥 Obteniendo deuda por cliente...");
+  
+  db.query(
+    `SELECT 
+      cliente,
+      COUNT(*) as total_compras,
+      SUM(total) as deuda_total,
+      MIN(fecha) as primera_compra,
+      MAX(fecha) as ultima_compra
+    FROM ventas
+    WHERE fiado = TRUE AND cliente IS NOT NULL
+    GROUP BY cliente
+    ORDER BY deuda_total DESC`,
+    (err, result) => {
+      if (err) {
+        console.error("❌ Error al obtener deuda por cliente:", err);
+        return res.status(500).json({ message: "Error al obtener deuda por cliente" });
+      }
+      console.log("✅ Deuda por cliente obtenida");
+      res.json(result);
+    }
+  );
+});
 
 //verifica que este funcionando el backend y las url de express
 app.listen(3001, () => {

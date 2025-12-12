@@ -16,6 +16,7 @@ function Vender({ onCerrar, usuarioId, nombreUsuario }) {
   const [toasts, setToasts] = useState([]);//mensajes de notificación
   const [modalConfirmacion, setModalConfirmacion] = useState(null);//mensaje de confirmación
   const [Fiado, setFiado] = useState(false);
+  const [nombreCliente, setNombreCliente] = useState("");
 
 // Se ejecuta al iniciar el componente.
 // Carga todos los productos desde el servidor
@@ -97,7 +98,8 @@ function Vender({ onCerrar, usuarioId, nombreUsuario }) {
       subtotal: precioConDescuento * cantidadNum,
       granel: productoSeleccionado.granel,
       descuento: productoSeleccionado.descuento,
-      fiado: Fiado
+      fiado: Fiado,
+      cliente: Fiado ? nombreCliente : null
     };
 
     setCarrito([...carrito, nuevoItem]);
@@ -119,15 +121,38 @@ function Vender({ onCerrar, usuarioId, nombreUsuario }) {
     return carrito.reduce((sum, item) => sum + item.subtotal, 0);
   };
 
+  const calcularTotalFiado = () => {
+    return carrito.filter(item => item.fiado).reduce((sum, item) => sum + item.subtotal, 0);
+  };
+
+  const calcularTotalPagado = () => {
+    return carrito.filter(item => !item.fiado).reduce((sum, item) => sum + item.subtotal, 0);
+  };
+
+  const hayProductosFiados = () => {
+    return carrito.some(item => item.fiado);
+  };
+
   const realizarVenta = async () => {
     if (carrito.length === 0) {
       mostrarToast("El carrito está vacío", "advertencia");
       return;
     }
 
-    const confirmar = await mostrarConfirmacion(
-      `¿Confirmar venta de ${carrito.length} producto(s) por un total de $${calcularTotal().toFixed(2)}?`
-    );
+    // Validar que si hay productos fiados, se haya ingresado el nombre del cliente
+    if (hayProductosFiados() && (!nombreCliente || nombreCliente.trim() === '')) {
+      mostrarToast("Debe ingresar el nombre del cliente para ventas fiadas", "advertencia");
+      return;
+    }
+
+    const totalFiado = calcularTotalFiado();
+    const totalPagado = calcularTotalPagado();
+    
+    let mensajeConfirmacion = `¿Confirmar venta de ${carrito.length} producto(s)?\n\n`;
+    if (totalPagado > 0) mensajeConfirmacion += `💵 A pagar ahora: $${totalPagado.toFixed(2)}\n`;
+    if (totalFiado > 0) mensajeConfirmacion += `💳 Total fiado: $${totalFiado.toFixed(2)}`;
+
+    const confirmar = await mostrarConfirmacion(mensajeConfirmacion);
 
     if (!confirmar) return;
 
@@ -135,7 +160,7 @@ function Vender({ onCerrar, usuarioId, nombreUsuario }) {
       const response = await Axios.post("http://localhost:3001/productos/vender", {
         usuario_id: usuarioId,
         productos: carrito,
-      
+        cliente: hayProductosFiados() ? nombreCliente : null
       });
 
       // Mostrar mensaje con ID de transacción
@@ -149,11 +174,15 @@ function Vender({ onCerrar, usuarioId, nombreUsuario }) {
       }
       
       // Mensaje de éxito con número de transacción
-      mostrarToast(
-        `✅ Venta realizada! Total: $${response.data.total_general.toFixed(2)} | ID: ${transaccionId}`,
-        "exito",
-        4000
-      );
+      let mensajeExito = `✅ Venta realizada! ID: ${transaccionId}\n`;
+      if (response.data.total_pagado > 0) {
+        mensajeExito += `💵 Pagado: $${response.data.total_pagado.toFixed(2)}`;
+      }
+      if (response.data.total_fiado > 0) {
+        mensajeExito += `\n💳 Fiado: $${response.data.total_fiado.toFixed(2)}`;
+      }
+
+      mostrarToast(mensajeExito, "exito", 5000);
 
       console.log("✅ Venta completada:", {
         transaccion_id: transaccionId,
@@ -163,6 +192,7 @@ function Vender({ onCerrar, usuarioId, nombreUsuario }) {
       });
 
       setCarrito([]);
+      setNombreCliente("");
       setTimeout(() => {
         if (onCerrar) onCerrar();
       }, 3000);
@@ -320,6 +350,26 @@ function Vender({ onCerrar, usuarioId, nombreUsuario }) {
           ¿Es venta de producto fiado?
         </label>
 
+        {hayProductosFiados() && (
+        <div style={{ marginTop: '15px' }}>
+          <label>Nombre del Cliente (requerido para fiados):</label>
+          <input
+            type="text"
+            value={nombreCliente}
+            onChange={(e) => setNombreCliente(e.target.value)}
+            placeholder="Ingrese nombre del cliente"
+            style={{
+              width: '100%',
+              padding: '10px',
+              border: '2px solid #f39c12',
+              borderRadius: '8px',
+              marginTop: '5px',
+              backgroundColor: '#fff8e1'
+            }}
+          />
+        </div>
+      )}
+
         <button
           className="btn-agregar-carrito"
           onClick={agregarAlCarrito}
@@ -385,9 +435,25 @@ function Vender({ onCerrar, usuarioId, nombreUsuario }) {
               ))}
             </div>
 
-            <div className="carrito-total">
-              <strong>TOTAL:</strong>
-              <span className="carrito-total-monto">${calcularTotal().toFixed(2)}</span>
+            <div className="carrito-totales">
+              {calcularTotalPagado() > 0 && (
+                <div className="carrito-total carrito-total-pagado">
+                  <strong>💵 A PAGAR:</strong>
+                  <span className="carrito-total-monto">${calcularTotalPagado().toFixed(2)}</span>
+                </div>
+              )}
+              
+              {calcularTotalFiado() > 0 && (
+                <div className="carrito-total carrito-total-fiado">
+                  <strong>💳 DEUDA:</strong>
+                  <span className="carrito-total-monto">${calcularTotalFiado().toFixed(2)}</span>
+                </div>
+              )}
+              
+              <div className="carrito-total carrito-total-general">
+                <strong>TOTAL:</strong>
+                <span className="carrito-total-monto">${calcularTotal().toFixed(2)}</span>
+              </div>
             </div>
 
             <div className="carrito-botones">

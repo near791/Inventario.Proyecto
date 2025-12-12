@@ -366,3 +366,29 @@
   }
 }
 
+/* Totales mejorados */
+.carrito-totales {
+  display: flex;
+  flex-direction: column;
+}
+
+.carrito-total-pagado {
+  background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+  padding: 6px 10px; 
+  font-size: 14px;  
+  border-radius: 6px;
+}
+
+.carrito-total-fiado {
+  background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+  padding: 6px 10px; 
+  font-size: 14px;  
+  border-radius: 6px;
+}
+
+.carrito-total-general {
+  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+  padding: 6px 10px; 
+  font-size: 14px;  
+  border-radius: 6px;
+}

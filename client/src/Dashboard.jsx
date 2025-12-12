@@ -23,6 +23,11 @@ function Dashboard() {
   const [alertas, setAlertas] = useState([]);
   const [promociones, setPromociones] = useState([]);
 
+  //Estados para fiados
+  const [mostrarFiados, setMostrarFiados] = useState(false);
+  const [ventasFiadas, setVentasFiadas] = useState([]);
+  const [deudaPorCliente, setDeudaPorCliente] = useState([]);
+
   //Estados para caducidad
   const [alertasCaducidad, setAlertasCaducidad] = useState([]);
   const [granel, setGranel] = useState(false);
@@ -438,6 +443,27 @@ const cargarAlertasCaducidad = () => {
     }
   };
 
+  const abrirFiados = () => {
+  console.log("💳 Abriendo panel de ventas fiadas");
+  setMostrarFiados(true);
+  cargarVentasFiadas();
+};
+
+const cargarVentasFiadas = async () => {
+  try {
+    const respDetalle = await Axios.get("http://localhost:3001/ventas/fiadas/detalle");
+    const respClientes = await Axios.get("http://localhost:3001/ventas/fiadas/por-cliente");
+    
+    setVentasFiadas(respDetalle.data);
+    setDeudaPorCliente(respClientes.data);
+    
+    console.log("✅ Ventas fiadas cargadas:", respDetalle.data.length);
+  } catch (error) {
+    console.error("❌ Error al cargar ventas fiadas:", error);
+    mostrarToast("Error al cargar ventas fiadas", "error");
+  }
+};
+
   return (
     <div className="dashboard">
       {/* Botón de Notificaciones */}
@@ -620,6 +646,13 @@ const cargarAlertasCaducidad = () => {
           </div>
           <button 
             className="btn-cerrar-ayuda" 
+            onClick={() => setMostrarAyuda(false)}
+            title="Cerrar ayuda"
+          >
+            ✕
+          </button>
+          <button 
+            className="btn-cerrar-ayuda2" 
             onClick={() => setMostrarAyuda(false)}
             title="Cerrar ayuda"
           >
@@ -957,6 +990,12 @@ const cargarAlertasCaducidad = () => {
                   >
                     Limpiar filtros
                   </button>
+                  <button 
+                    className="btn-ver-fiados"
+                    onClick={abrirFiados}
+                  >
+                    💳 Ver Fiados
+                  </button>
                 </div>
 
                 {cargandoDatos ? (
@@ -1076,11 +1115,13 @@ const cargarAlertasCaducidad = () => {
                                   <td>${parseFloat(v.precio_unitario).toFixed(2)}</td>
                                   <td className="total-venta">${parseFloat(v.total).toFixed(2)}</td>
                                   <td>{v.transaccion_id}</td>
-                                  <td>{v.fiado ? (
+                                  <td>
+                                  {v.fiado === 1 ? (
                                     <span className="badge-fiado">💳 FIADO TIENDA</span>
-                                    ) : (
-                                    <span className="badge-pagado">✅ PAGADO CLIENTES</span>
-                                    )}</td>
+                                  ) : (
+                                    <span className="badge-pagado">✅ PAGADO</span>
+                                  )}
+                                </td>
                                 </tr>
                               ))}
                             </tbody>
@@ -1094,6 +1135,88 @@ const cargarAlertasCaducidad = () => {
                   </>
                 )}
 
+              </div>
+            </div>
+          )}
+          {/* Panel de Ventas Fiadas */}
+          {mostrarFiados && (
+            <div className="panel-overlay" onClick={() => setMostrarFiados(false)}>
+              <div className="panel-fiados" onClick={(e) => e.stopPropagation()}>
+                <button className="btn-cancelar2" onClick={() => setMostrarFiados(false)}>
+                  Cerrar
+                </button>
+                
+                <h3>💳 Ventas Fiadas</h3>
+                
+                {/* Resumen por Cliente */}
+                <div className="seccion-datos">
+                  <h4>👥 Deuda por Cliente</h4>
+                  {deudaPorCliente.length === 0 ? (
+                    <p className="sin-datos">No hay deudas registradas</p>
+                  ) : (
+                    <div className="tabla-container">
+                      <table className="tabla-datos">
+                        <thead>
+                          <tr>
+                            <th>Cliente</th>
+                            <th>Total Compras</th>
+                            <th>Deuda Total</th>
+                            <th>Primera Compra</th>
+                            <th>Última Compra</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {deudaPorCliente.map((cliente, index) => (
+                            <tr key={index}>
+                              <td><strong>{cliente.cliente}</strong></td>
+                              <td>{cliente.total_compras}</td>
+                              <td className="ingreso">${parseFloat(cliente.deuda_total).toFixed(2)}</td>
+                              <td className="fecha">{new Date(cliente.primera_compra).toLocaleDateString('es-CL')}</td>
+                              <td className="fecha">{new Date(cliente.ultima_compra).toLocaleDateString('es-CL')}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+
+                {/* Detalle de Ventas */}
+                <div className="seccion-datos">
+                  <h4>📋 Detalle de Ventas Fiadas</h4>
+                  {ventasFiadas.length === 0 ? (
+                    <p className="sin-datos">No hay ventas fiadas registradas</p>
+                  ) : (
+                    <div className="tabla-container historial-scroll">
+                      <table className="tabla-datos">
+                        <thead>
+                          <tr>
+                            <th>Fecha</th>
+                            <th>Cliente</th>
+                            <th>Producto</th>
+                            <th>Cantidad</th>
+                            <th>Precio Unit.</th>
+                            <th>Total</th>
+                            <th>N° Transacción</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {ventasFiadas.map((venta) => (
+                            <tr key={venta.id}>
+                              <td className="fecha">{venta.fecha_formateada}</td>
+                              <td><strong>{venta.cliente}</strong></td>
+                              <td>{venta.producto_nombre}</td>
+                              <td>{parseFloat(venta.cantidad).toFixed(2)}</td>
+                              <td>${parseFloat(venta.precio_unitario).toFixed(2)}</td>
+                              <td className="total-venta">${parseFloat(venta.total).toFixed(2)}</td>
+                              <td className="transaccion-id">{venta.transaccion_id}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
