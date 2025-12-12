@@ -15,8 +15,6 @@ function Dashboard() {
   const [nombreProducto, setNombreProducto] = useState("");
   const [cantidad, setCantidad] = useState("");
   const [precio, setPrecio] = useState("");
-  const [granel, setGranel] = useState(false);
-  const [productosFiltrados, setProductosFiltrados] = useState([]);
   const [mostrarSugerencias, setMostrarSugerencias] = useState(false);
   const [mensaje, setMensaje] = useState("");
   const [productoExistente, setProductoExistente] = useState(false);
@@ -24,6 +22,12 @@ function Dashboard() {
   const [productoEditando, setProductoEditando] = useState(null);
   const [alertas, setAlertas] = useState([]);
   const [promociones, setPromociones] = useState([]);
+
+  //Estados para caducidad
+  const [alertasCaducidad, setAlertasCaducidad] = useState([]);
+  const [granel, setGranel] = useState(false);
+  const [tieneCaducidad, setTieneCaducidad] = useState(false); 
+  const [productosFiltrados, setProductosFiltrados] = useState([]);
   
   //Estados para mostrar datos
   const [mostrarDatos, setMostrarDatos] = useState(false);
@@ -102,13 +106,42 @@ useEffect(() => {
   useEffect(() => {
     cargarAlertas();
     cargarPromociones();
+    cargarAlertasCaducidad();
     const intervalo = setInterval(() => {
       cargarAlertas();
       cargarPromociones();
-    }, 30000);
+      cargarAlertasCaducidad();
+    }, 30000); // cada 30 segundos
     return () => clearInterval(intervalo);
   }, []);
 
+const cargarAlertasCaducidad = () => {
+  Axios.get("http://localhost:3001/productos/alertas-caducidad")
+    .then((response) => {
+      console.log("⏰ Alertas de caducidad cargadas:", response.data);
+      setAlertasCaducidad(response.data);
+    })
+    .catch((error) => {
+      console.error("❌ Error al cargar alertas de caducidad:", error);
+    });
+};
+
+  const actualizarCaducidad = (id, nuevosDias) => {
+    console.log("📅 Actualizando caducidad del producto ID:", id, "a", nuevosDias, "días");
+    
+    Axios.put(`http://localhost:3001/productos/${id}/caducidad`, {
+      dias_caducidad: nuevosDias
+    })
+      .then((response) => {
+        mostrarToast("Caducidad actualizada correctamente", "exito");
+        cargarProductos();
+        cargarAlertasCaducidad();
+      })
+      .catch((error) => {
+        mostrarToast(error?.response?.data?.message || "Error al actualizar caducidad", "error");
+        console.error("❌ Error al actualizar caducidad:", error);
+      });
+  };
   const cargarProductos = () => {
     Axios.get("http://localhost:3001/productos")
       .then((response) => {
@@ -197,6 +230,7 @@ useEffect(() => {
       cantidad: parseFloat(cantidad),
       precio: precio ? parseFloat(precio) : null,
       granel: granel,
+      tiene_caducidad: tieneCaducidad // 🆕 AGREGAR ESTA LÍNEA
     })
       .then((response) => {
         mostrarToast(response.data.message, "exito");
@@ -204,6 +238,7 @@ useEffect(() => {
         setCantidad("");
         setPrecio("");
         setGranel(false);
+        setTieneCaducidad(false); // 🆕 AGREGAR ESTA LÍNEA
         setProductoExistente(false);
         setProductoGranelExistente(false);
         setMostrarPanel(false);
@@ -213,7 +248,6 @@ useEffect(() => {
         mostrarToast(error?.response?.data?.message || "Error al agregar producto", "error");
       });
   };
-
 
   const abrirAyuda = () => {
     console.log("🆘 Abriendo ayuda general");
@@ -245,6 +279,7 @@ useEffect(() => {
     setCantidad("");
     setPrecio("");
     setGranel(false);
+    setTieneCaducidad(false);
     setProductoExistente(false);
     setProductoGranelExistente(false);
     setMensaje("");
@@ -414,8 +449,8 @@ useEffect(() => {
         onClick={toggleNotificaciones}
       >
         🔔 Notificaciones
-        {(alertas.length + promociones.length) > 0 && (
-          <span className="badge">{alertas.length + promociones.length}</span>
+        {(alertas.length + promociones.length + alertasCaducidad.length) > 0 && (
+          <span className="badge">{alertas.length + promociones.length + alertasCaducidad.length}</span>
         )}
       </button>
 
@@ -472,6 +507,33 @@ useEffect(() => {
               </div>
             ))
           )}
+            <h4>⏰ Alertas de Caducidad ({alertasCaducidad.length})</h4>
+            {alertasCaducidad.length === 0 ? (
+              <p style={{color: '#999', fontSize: '14px'}}>✅ No hay productos próximos a caducar</p>
+            ) : (
+              alertasCaducidad.map((p) => (
+                <div key={p.id} className="notificacion-item caducidad">
+                  <strong>{p.nombre}</strong>
+                  {p.dias_caducidad === 0 ? (
+                    <span style={{
+                      color: '#c0392b',
+                      fontWeight: 'bold',
+                      fontSize: '16px'
+                    }}>
+                      ❌ PRODUCTO VENCIDO
+                    </span>
+                  ) : (
+                    <span style={{
+                      color: p.dias_caducidad <= 2 ? '#c0392b' : '#e67e22',
+                      fontWeight: 'bold',
+                      fontSize: '16px'
+                    }}>
+                      ⚠️ Quedan {p.dias_caducidad} día{p.dias_caducidad !== 1 ? 's' : ''}
+                    </span>
+                  )}
+                </div>
+              ))
+            )}
         </div>
       )}
 
@@ -506,7 +568,14 @@ useEffect(() => {
       {/* Panel de Ayuda */}
       {mostrarAyuda && (
         <div className="panel-ayuda">
-          <div> 
+          <button 
+            className="btn-cerrar-ayuda"
+            onClick={() => setMostrarAyuda(false)}
+          >
+            ✕
+          </button>
+
+          <div>
           <p> Bienvenido al Gestor de Inventario Tienda Goyito!😊 </p> 
           <p> Como podrás ver, aquí se puede "Agregar producto", "Ver Inventario", "Vender productos" y "Ver Datos". </p>
 
@@ -559,99 +628,100 @@ useEffect(() => {
           >
             ✕
           </button>
-          <button 
-            className="btn-cerrar-ayuda2" 
-            onClick={() => setMostrarAyuda(false)}
-            title="Cerrar ayuda"
-          >
-            ✕
-          </button>
         </div>
       )}
 
       {/* Panel Agregar Productos */}
-      {mostrarPanel && (
-        <div className="panel-overlay" onClick={() => setMostrarPanel(false)}>
-          <div className="panel-agregar" onClick={(e) => e.stopPropagation()}>
-            <h3>Agregar Producto</h3>
-            
-            <label>Nombre del Producto:</label>
-            <div className="input-con-sugerencias">
-              <input
-                type="text"
-                value={nombreProducto}
-                onChange={(e) => filtrarProductos(e.target.value)}
-                onFocus={() => setMostrarSugerencias(true)}
-                placeholder="Busca o escribe un producto..."
-              />
-              {mostrarSugerencias && productosFiltrados.length > 0 && (
-                <div className="sugerencias">
-                  {productosFiltrados.map((producto) => (
-                    <div
-                      key={producto.id}
-                      className="sugerencia-item"
-                      onClick={() => seleccionarProducto(producto)}
-                    >
-                      {producto.nombre} (Stock: {producto.granel ? `${producto.cantidad} kg` : producto.cantidad})
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            
-            {nombreProducto && (
-              <p style={{ fontSize: '12px', color: productoExistente ? '#27ae60' : '#e67e22', marginTop: '5px' }}>
-                {productoExistente ? '✓ Producto existente - se sumará al stock' : '✨ Producto nuevo - se creará'}
-              </p>
-            )}
+            {mostrarPanel && (
+              <div className="panel-overlay" onClick={() => setMostrarPanel(false)}>
+                <div className="panel-agregar" onClick={(e) => e.stopPropagation()}>
+                  <h3>Agregar Producto</h3>
+                  
+                  <label>Nombre del Producto:</label>
+                  <div className="input-con-sugerencias">
+                    <input
+                      type="text"
+                      value={nombreProducto}
+                      onChange={(e) => filtrarProductos(e.target.value)}
+                      onFocus={() => setMostrarSugerencias(true)}
+                      placeholder="Busca o escribe un producto..."
+                    />
+                    {mostrarSugerencias && productosFiltrados.length > 0 && (
+                      <div className="sugerencias">
+                        {productosFiltrados.map((producto) => (
+                          <div
+                            key={producto.id}
+                            className="sugerencia-item"
+                            onClick={() => seleccionarProducto(producto)}
+                          >
+                            {producto.nombre} (Stock: {producto.granel ? `${producto.cantidad} kg` : producto.cantidad})
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {nombreProducto && (
+                    <p style={{ fontSize: '12px', color: productoExistente ? '#27ae60' : '#e67e22', marginTop: '5px' }}>
+                      {productoExistente ? '✓ Producto existente - se sumará al stock' : '✨ Producto nuevo - se creará'}
+                    </p>
+                  )}
 
-            <label>Cantidad a Agregar{productoGranelExistente ? ' (kg)' : ''}:</label>
-            <input
-              type="number"
-              value={cantidad}
-              onChange={(e) => setCantidad(e.target.value)}
-              placeholder={productoGranelExistente ? "Ej: 0.5" : "Ingresa la cantidad"}
-              min="0"
-              step={productoGranelExistente ? "0.01" : "1"}
-            />
-
-            {!productoExistente && (
-              <>
-                <label style={{ display: 'flex', alignItems: 'center', marginTop: '15px', cursor: 'pointer' }}>
+                  <label>Cantidad a Agregar{productoGranelExistente ? ' (kg)' : ''}:</label>
                   <input
-                    type="checkbox"
-                    checked={granel}
-                    onChange={(e) => setGranel(e.target.checked)}
-                    style={{ marginRight: '8px', width: 'auto', cursor: 'pointer' }}
+                    type="number"
+                    value={cantidad}
+                    onChange={(e) => setCantidad(e.target.value)}
+                    placeholder={productoGranelExistente ? "Ej: 0.5" : "Ingresa la cantidad"}
+                    min="0"
+                    step={productoGranelExistente ? "0.01" : "1"}
                   />
-                  ¿Es producto a granel? (se mide en kg)
-                </label>
 
-                <label>Precio (CLP) por {granel ? 'kg' : 'unidad'}:</label>
-                <input
-                  type="number"
-                  value={precio}
-                  onChange={(e) => setPrecio(e.target.value)}
-                  placeholder="Ingresa el precio en pesos CLP"
-                  min="0"
-                  step="0.01"
-                />
-              </>
+                  {!productoExistente && (
+                    <>
+                      <label style={{ display: 'flex', alignItems: 'center', marginTop: '15px', cursor: 'pointer' }}>
+                        <input
+                          type="checkbox"
+                          checked={granel}
+                          onChange={(e) => setGranel(e.target.checked)}
+                          style={{ marginRight: '8px', width: 'auto', cursor: 'pointer' }}
+                        />
+                        ¿Es producto a granel? (se mide en kg)
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', marginTop: '10px', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={tieneCaducidad}
+                        onChange={(e) => setTieneCaducidad(e.target.checked)}
+                        style={{ marginRight: '8px', width: 'auto', cursor: 'pointer' }}
+                      />
+                      ¿Tiene fecha de caducidad? (30 días por defecto)
+                    </label>
+                      <label>Precio por {granel ? 'kg' : 'unidad'}:</label>
+                      <input
+                        type="number"
+                        value={precio}
+                        onChange={(e) => setPrecio(e.target.value)}
+                        placeholder="Ingresa el precio"
+                        min="0"
+                        step="0.01"
+                      />
+                    </>
+                  )}
+
+                  <div className="botones-panel">
+                    <button className="btn-confirmar" onClick={agregarProducto}>
+                      Agregar
+                    </button>
+                    <button className="btn-cancelar" onClick={() => setMostrarPanel(false)}>
+                      Cancelar
+                    </button>
+                  </div>
+
+                  {mensaje && <p className="mensaje-panel">{mensaje}</p>}
+                </div>
+              </div>
             )}
-
-            <div className="botones-panel">
-              <button className="btn-confirmar" onClick={agregarProducto}>
-                Agregar
-              </button>
-              <button className="btn-cancelar" onClick={() => setMostrarPanel(false)}>
-                Cancelar
-              </button>
-            </div>
-
-            {mensaje && <p className="mensaje-panel">{mensaje}</p>}
-          </div>
-        </div>
-      )}
 
       {/* Panel de Venta */}
       {mostrarVenta && (
@@ -689,6 +759,7 @@ useEffect(() => {
                     <th>Precio</th>
                     <th>Descuento</th>
                     <th>Tipo</th>
+                    <th>Caducidad</th>
                     <th>Acciones</th>
                   </tr>
                 </thead>
@@ -711,6 +782,35 @@ useEffect(() => {
                         <td>${producto.precio}</td>
                         <td>{producto.descuento}%</td>
                         <td>{producto.granel ? '🔢 Granel' : '📦 Unidad'}</td>
+                        <td>
+                        {producto.dias_caducidad !== null ? (
+                          <>
+                            <input
+                              type="number"
+                              value={producto.dias_caducidad}
+                              onChange={(e) => {
+                                const nuevoValor = parseInt(e.target.value);
+                                if (!isNaN(nuevoValor) && nuevoValor >= 0) {
+                                  actualizarCaducidad(producto.id, nuevoValor);
+                                }
+                              }}
+                              min="0"
+                              style={{
+                                width: '70px',
+                                padding: '5px',
+                                border: producto.dias_caducidad <= 5 ? '2px solid #e74c3c' : '2px solid #ddd',
+                                borderRadius: '5px',
+                                backgroundColor: producto.dias_caducidad <= 5 ? '#ffebee' : 'white',
+                                fontWeight: producto.dias_caducidad <= 5 ? 'bold' : 'normal',
+                                color: producto.dias_caducidad <= 5 ? '#c62828' : '#333'
+                              }}
+                            />
+                            <span style={{marginLeft: '5px', fontSize: '12px', color: '#666'}}>días</span>
+                          </>
+                        ) : (
+                          <span style={{color: '#999', fontSize: '13px'}}>Sin caducidad</span>
+                        )}
+                      </td>
                         <td>
                           <button 
                             className="btn-editar" 
