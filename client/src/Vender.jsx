@@ -189,12 +189,16 @@ function Vender({ onCerrar, usuarioId, nombreUsuario }) {
         productos: response.data.productos_vendidos,
       });
 
-      setFiado(false);
-      setCarrito([]);
-      setNombreCliente("");
-      setTimeout(() => {
-        if (onCerrar) onCerrar();
-      }, 3000);
+setFiado(false);
+setCarrito([]);
+setNombreCliente("");
+
+    // ✨ Notificar al Dashboard que hubo una venta
+    window.dispatchEvent(new Event('ventaRealizada'));
+
+    setTimeout(() => {
+      if (onCerrar) onCerrar();
+    }, 3000);
     } catch (error) {
       console.error("❌ Error en venta:", error);
       mostrarToast(

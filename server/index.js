@@ -295,7 +295,7 @@ app.post("/productos/vender", (req, res) => {
           cantidad,
           precio_unitario,
           subtotal,
-          Fiado: Fiado ? 1 : 0
+          fiado: fiado ? 1 : 0
         });
 
         // Verificar producto y stock
@@ -338,8 +338,6 @@ app.post("/productos/vender", (req, res) => {
                 });
               }
 
-              const esFiado = Fiado ? 1 : 0;
-
               // Registrar la venta CON transaccion_id
               db.query(
                 `INSERT INTO ventas (
@@ -355,7 +353,7 @@ app.post("/productos/vender", (req, res) => {
                 Fiado
                 ) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [transaccionId, usuarioIdNum, nombreUsuario, (fiado ? cliente : null), producto_id, producto.nombre, cantidad, precio_unitario, subtotal, (fiado ? 1 : 0)],
+                [transaccionId, usuarioIdNum, nombreUsuario, (fiado ? cliente : null), producto_id, producto.nombre, cantidad, precio_unitario, subtotal, fiado],
                 (err) => {
                   if (err) {
                     return db.rollback(() => {

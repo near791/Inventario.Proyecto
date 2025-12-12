@@ -120,6 +120,19 @@ useEffect(() => {
     return () => clearInterval(intervalo);
   }, []);
 
+  // Recargar estadísticas cuando se realice una venta
+useEffect(() => {
+  const handleVentaRealizada = () => {
+    if (mostrarDatos) {
+      console.log("🔄 Recargando datos después de venta...");
+      cargarEstadisticas();
+    }
+  };
+  
+  window.addEventListener('ventaRealizada', handleVentaRealizada);
+  return () => window.removeEventListener('ventaRealizada', handleVentaRealizada);
+}, [mostrarDatos]);
+
 const cargarAlertasCaducidad = () => {
   Axios.get("http://localhost:3001/productos/alertas-caducidad")
     .then((response) => {
@@ -1116,7 +1129,7 @@ const cargarVentasFiadas = async () => {
                                   <td className="total-venta">${parseFloat(v.total).toFixed(2)}</td>
                                   <td>{v.transaccion_id}</td>
                                   <td>
-                                  {v.fiado === 1 ? (
+                                  {v.Fiado === 1 ? (
                                     <span className="badge-fiado">💳 FIADO TIENDA</span>
                                   ) : (
                                     <span className="badge-pagado">✅ PAGADO</span>
