@@ -699,39 +699,55 @@ const cargarVentasFiadas = async () => {
               el nombre de tu primer producto a vender. </p>
 
           <p> En la casilla "Cantidad a agregar", ingresaremos en unidades la cantidad de productos que compraremos para nuestro establecimiento.
-              Justo debajo de esto, vemos que existe un cuadro para seleccionar "¿Es producto a granel?". Daremos click al cuadro
-              siempre que el tipo de producto que estamos ingresando se venda según la cantidad de kilogramos que lleve el cliente.
+              Justo debajo de esto, vemos que existe dos cuadros para seleccionar, uno nos pregunta "¿Es producto a granel? (Se mide en Kg)". Daremos 
+              click al cuadro siempre que el tipo de producto que estamos ingresando se venda según la cantidad de kilogramos que lleve el cliente. 
+              El siguiente nos pregunta "¿Tiene fecha de caducidad? (30 días por defecto)" de misma manera que el anterior, haremos click en está 
+              siempre y cuando el producto que estemos ingresando tenga una fecha de caducidad a seguir.
               Ahora bien, podemos observar que la última casilla a completar se titula "Precio por unidad",
-              en esta casilla ingresaremos el precio exacto al que venderemos el producto,
+              en esta casilla ingresaremos el precio exacto al que venderemos el producto, 
               incluyendo el IVA, todo esto en pesos chilenos.
               Finalmente, al haber ingresado y rellenado cada una de esas casillas, daremos click al botón verde "Agregar". ¡Y listo! Haz agregado
               productos al inventario de la tienda. Aparecerá una notificacion sobre la compra realizada. </p>
 
           <p> A continuación, para ver el inventario actual de la tienda, haz click sobre el botón de "Ver Inventario", abriendo una ventana
               con un listado de los productos en stock, aquellos bienes que se encuentren agotados serán resaltados en rojo, indicando una alerta
-              de inventario. Además,al extremo derecho de la tabla se encuentran dos botones por producto, con el botón rojo 🗑️ podrás eliminar
-              los productos que ya no serán vendidos en la tienda. Mientras que, con el botón azul ✏️, podrás agregar promociones en tus productos.
+              de inventario. Además, al extremo derecho de la tabla se encuentran tres funciones, la primera siendo una casilla con numeros ajustables,
+              está representa la fecha de caducidad, a la cual se puede alterar la fecha dependiendo de que producto sea, al pasar el tiempo estos 
+              días se van descontando, ten en cuenta que al llegar a cierto numero bajo, se dará la alerta por estar el producto cerca de su fecha de 
+              vencimiento, resaltando al producto en rojo de misma manera que si estuviera agotandose, por otro lado podemos ver que hay dos botones 
+              por producto, en los cuales con el botón rojo 🗑️ podrás eliminar los productos que ya no serán vendidos en la tienda. Mientras que, con 
+              el botón azul ✏️, podrás agregar promociones en tus productos.
           </p>
-          <p> Para agregar una promoción, al seleccionar el botón ✏️ se abrirá una ventana con algunas casillas autocompletadas con los datos del producto.
-              Podemos modificar la información de nuestros bienes a gusto. En la última casilla "Descuento (%)" es importante ingresar el porcentaje a descontrar
-              a nuestro producto, siempre considerando que esta promoción se aplicará a cada unidad por separado, o bien,
-              a cada kilogramo de producto, según corresponda. 
+          <p> Para agregar una promoción, al seleccionar el botón ✏️ se abrirá una ventana con algunas casillas autocompletadas con los datos del 
+              producto.
+              Podemos modificar la información de nuestros bienes a gusto. En la última casilla "Descuento (%)" es importante ingresar el porcentaje a 
+              descontrar a nuestro producto, siempre considerando que esta promoción se aplicará a cada unidad por separado, o bien, a cada kilogramo 
+              de producto, según corresponda. 
           </p>
-          <p> Al momento de atender a un cliente, tendremos que ingresar los productos que quiera comprar en su "carrito de compras". Para esto, haremos click
-              en el botón "Vender productos". A continuación se presenta una ventana con dos casillas. En la primera, "Producto", ingresaremos el nombre de el tipo de
-              producto que se está vendiendo, y en la casilla "Cantidad" completaremos con el número de unidades, o bien, kilogramos. Finalmente, una vez seguro de que
-              la información ingresada es correcta, seleccionamos el botón "+ Agregar al Carrito". En caso de que la información no corresponda, podemos hacer click
-              en el botón rojo 🗑️ para eliminar este ingreso erróneo, y reemplazarlo con uno nuevo y correcto.
-              Una vez ingresados todos los productos de la compra, podemos finalizar la venta haciendo click en "Realizar Venta". Los datos de esta acción se registrarán
-              de forma automática en la sección de "Ver Datos".
+          <p> Al momento de atender a un cliente, tendremos que ingresar los productos que quiera comprar en su "carrito de compras". Para esto, haremos 
+              click en el botón "Vender productos". A continuación se presenta una ventana con dos casillas y una casilla de selección. En la primera, 
+              "Producto", ingresaremos el nombre de el tipo de producto que se está vendiendo, y en la casilla "Cantidad" completaremos con el número 
+              de unidades, o bien, kilogramos.
+              A continuación tenemos un cuadro de selección que nos pregunta "¿Es venta de producto fiado?", le daremos click siempre y cuando la respuesta 
+              sea Si. 
+              Finalmente, una vez seguro de que la información ingresada es correcta, seleccionamos el botón "+ Agregar al Carrito". En caso de que la 
+              información no corresponda, podemos hacer click en el botón rojo 🗑️ para eliminar este ingreso erróneo, y reemplazarlo con uno nuevo y correcto.
+              Notamos también que en el caso de haber seleccionado la casilla con la pregunta "¿Es venta de producto fiado?", se abrira una nueva casilla 
+              luego de agregar el producto al carrito, está siendo para ingresar el nombre del cliente, el cuál estaría fiando los productos, de está manera
+              se mantiene constancia, y como se ve a un lado del total de la compra, también se ve la deuda que acumula el cliente.
+              Una vez ingresados todos los productos de la compra, podemos finalizar la venta haciendo click en "Realizar Venta". Los datos de esta acción 
+              se registrarán de forma automática en la sección de "Ver Datos".
           </p>
-          <p> La sección de "Ver Datos" nos ofrece información sobre la tienda Goyito, podemos filtrar esta información por año y mes, saber la cantidad de
-              ventas totales que ha tenido la tienda, los ingresos, unidades vendidas a granel y por unidades, así como el promedio de dinero obtenido en ventas. Más abajo,
-              se puede observar una tabla que nos indica los productos más vendidos y que, por tanto, son de mayor interés para nuestro inventario. A su vez, al deslizar
-              hasta el final de la ventana, se observa una tabla con el detalle del historial de ventas realizadas, según fecha, hora, vendedor, los productos vendidos,
-              cantidad, precio individual y total de cada venta. </p>
+          <p> La sección de "Ver Datos" nos ofrece información sobre la tienda Goyito, podemos filtrar esta información por año y mes. También notamos que 
+              hay un botón para ver las ventas fiadas en una ventana aparte, en la cuál se nos presentan en Deuda por cliente y los detalels de cada venta
+              realizada. Al salir de la ventana de Ventas Fiadas, vemos que podemos saber la cantidad de ventas totales que ha tenido la tienda, los ingresos, 
+              unidades vendidas a granel y por unidades, así como el promedio de dinero obtenido en ventas. Más abajo, se puede observar una tabla que nos 
+              indica los productos más vendidos y que, por tanto, son de mayor interés para nuestro inventario. A su vez, al deslizar hasta el final de la 
+              ventana, se observa una tabla con el detalle del historial de ventas realizadas, según fecha, hora, vendedor, los productos vendidos, cantidad, 
+              precio individual, total de cada venta, número de transacción y Estado (Fiado o Pagado). 
+          </p>
 
-          <p> Finalmente, el panel de notificaciones nos brindará alertas sobre productos agotados y promociones activas.
+          <p> Finalmente, el panel de notificaciones nos brindará alertas sobre productos agotados, promociones activas y alertas de caducidad.
           </p>
           <p> Para mayor información diríjase con un miembro certificado de Goyito S.A. Gracias por preferir trabajar con nosotros.</p>
           
