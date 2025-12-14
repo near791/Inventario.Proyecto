@@ -13,11 +13,13 @@ Sistema de gestion de inventario con autenticacion de usuarios.
 ### 1. Clonar el repositorio
 
 git clone https://github.com/near791/Inventario.Proyecto.git
+
 cd Inventario.Proyecto
 
 ### 2. Configurar base de datos MySQL
 
 Instalar laragon:
+
 link de descarga https://laragon.org/download
 
 Luego crear base da datos ejecutando lo siguiente en la consola:
@@ -95,6 +97,7 @@ Frontend:
 cd client (dirección de la carpeta client)
 
 2.- librerias a installar en consola de la carpeta client:
+
 npm install react router dom (version 6) axios
 
 Backend:
@@ -102,22 +105,29 @@ Backend:
 cd server (dirección carpeta server)
 
 librerias a instalar en server:
+
 npm install express mysql2 bcrypt cors
 
 ## Ejecutar proyecto
 
-Terminal 1 - Backend:
+Terminal 1 - 
+Backend:
+
 cd server
 
 Ejecutar
 node index.js
+
 (levanta la conexión con el servidor)
 
-Terminal 2 - Frontend:
+Terminal 2 - 
+Frontend:
+
 cd client
 
 Ejecutar
 npm start
+
 (Inicia la app)
 
 ## Comandos Git
@@ -133,7 +143,9 @@ git pull
 Despues de hacer cambios(ejemplo git add server/index.js, luego el git comit -m "una descripcion"
 finaliza con git push para cargar los cambios):
 git add .
+
 git commit -m "Descripcion de cambios"
+
 git push
 
 ## Funcionalidades
@@ -144,11 +156,13 @@ git push
 - Vender producto (se venden productos a traves de la genstion de un carrito de compras, se puede
   vender por unidad y tambien por granel)
 - Panel de datos (estadisticas generales, productos mas vendidos, historial de productos)
+- Opcion de fiado o "venta interna" a través de una casilla extra en la tabla
+  de ventas.
+- Fecha de caducidad, integrada para usarse desde el panel de "ver inventario".
 
 ## Funcionalidades a agregar en nuevas versiones
 
 - Añadir y vender a travéz de escaneo de codigos de barra vía celular o escaner USB.
-- Agregar la opcion de fiado o "venta interna" a través de una casilla extra en la tabla
-  de ventas.
+- Compatibilidad con los distintos dispositivos existentes (Tablets, Smartphones, etc)
 
 README.md actualizado 08-12-25
