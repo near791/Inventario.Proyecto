@@ -112,7 +112,6 @@ npm install express mysql2 bcrypt cors
 
 Terminal 1 - 
 Backend:
-
 cd server
 
 Ejecutar
@@ -122,7 +121,6 @@ node index.js
 
 Terminal 2 - 
 Frontend:
-
 cd client
 
 Ejecutar
